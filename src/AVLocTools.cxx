@@ -13,13 +13,13 @@
 #include "include/AVLocTools.h"
 
 // function to load a root file
-void LoadRootFile(string filename, TTree **tree, RAT::DS::Root **rDS, RAT::DS::Run **rRun)
+void LoadRootFile(string filename, TTree **tree, RAT::DS::Entry **rDS, RAT::DS::Run **rRun)
 {
   TFile *file = new TFile(filename.data());
   (*tree) = (TTree*)file->Get( "T" );
   TTree *runTree = (TTree*)file->Get("runT");
   assert(runTree);
-  *rDS = new RAT::DS::Root();
+  *rDS = new RAT::DS::Entry();
   (*tree)->SetBranchAddress( "ds", &(*rDS) );
   assert(rDS);
   *rRun = new RAT::DS::Run();

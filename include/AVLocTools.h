@@ -4,18 +4,19 @@
 //
 #ifndef __AVLOCTOOLS_H__
 #define __AVLOCTOOLS_H__
-
+using namespace std;
 #include <string>
 #include <TH1D.h>
 #include <TNtuple.h>
 #include <TTree.h>
 #include <TVector3.h>
 #include <RAT/DB.hh>
-#include <RAT/DS/Root.hh>
+#include <RAT/DS/Entry.hh>
+#include <TGraph.h>
 #include <RAT/DS/Run.hh>
 
 // function to load a root file
-void LoadRootFile(string filename, TTree **tree, RAT::DS::Root **rDS, RAT::DS::Run **rRun);
+void LoadRootFile(string filename, TTree **tree, RAT::DS::Entry **rDS, RAT::DS::Run **rRun);
 
 // function to load the RAT database
 void LoadDataBase(string logname);

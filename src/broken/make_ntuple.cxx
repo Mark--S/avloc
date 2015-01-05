@@ -13,7 +13,7 @@
 #include <TTree.h>
 
 #include <RAT/DB.hh>
-#include <RAT/DS/Root.hh>
+#include <RAT/DS/Entry.hh>
 #include <RAT/DS/Run.hh>
 
 #include "include/AVLocTools.h"
@@ -33,7 +33,7 @@ int main(int argc,char **argv)
   else {
     filename = argv[1];
   }
-  RAT::DS::Root * rDS  = NULL;
+  RAT::DS::Entry * rDS  = NULL;
   RAT::DS::Run  * rRun = NULL;
   TTree         * tree = NULL;
   LoadRootFile(filename,&tree,&rDS,&rRun);

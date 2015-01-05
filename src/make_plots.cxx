@@ -10,7 +10,7 @@
 #include <TNtuple.h>
 
 #include <RAT/DB.hh>
-#include <RAT/DS/Root.hh>
+#include <RAT/DS/Entry.hh>
 #include <RAT/DS/Run.hh>
 
 #include "include/AVLocTools.h"

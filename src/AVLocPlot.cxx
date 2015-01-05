@@ -5,7 +5,7 @@
 #include "include/AVLocPlot.h"
 #include "include/AVLocTools.h"
 
-#include <RAT/DS/Root.hh>
+#include <RAT/DS/Entry.hh>
 #include <RAT/DS/EV.hh>
 #include <RAT/DB.hh>
 
