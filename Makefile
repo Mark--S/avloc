@@ -9,7 +9,7 @@
 include $(ROOTSYS)/etc/Makefile.arch
 -include $(ROOTSYS)/MyConfig.mk
 HdrSuf       = h
-#-----------------------------------------------------------------------------
+SOFLAGS       = #-----------------------------------------------------------------------------
 # special programs
 #-----------------------------------------------------------------------------
 # special root
@@ -37,7 +37,7 @@ AVLOCLIB     =  lib/libAVLoc.$(DllSuf)
 # libraries to be included
 #-----------------------------------------------------------------------------
 ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Darwin
-NEXTLIBS = -L$(CURDIR)/lib -lAVLoc
+NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 #-----------------------------------------------------------------------------
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
 .PHONY:     READ
@@ -74,8 +74,9 @@ $(FLATMAP):	$(AVLOCLIB) $(FLATMAPO)
 			@echo "$@ done"
 
 $(AVLOCLIB):	$(AVLOCOBJS)
-		$(LD) $(SOFLAGS) $(ALLLIBS) $^ $(OutPutOpt) $@
+		$(LD)  -dynamiclib -single_module -install_name $(CURDIR)/lib/$@ $(ALLLIBS) $^ $(OutPutOpt) $@
 		@echo "$@ done"
+		@echo "libs $(SOFLAGS)" 
 
 .$(SrcSuf).$(ObjSuf):
 	$(CXX)  $(CXXFLAGS) -I. -I$(RATROOT)/include -c $< -o $@
