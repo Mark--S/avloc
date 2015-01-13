@@ -16,8 +16,8 @@ SOFLAGS       = #---------------------------------------------------------------
 AVLOCROOTO   =  src/avlocroot.$(ObjSuf)
 AVLOCROOT    =  bin/avlocroot$(ExeSuf)
 # make summary ntuple
-#MAKENTUPLEO  =  src/make_ntuple.$(ObjSuf)
-#MAKENTUPLE   =  bin/make_ntuple$(ExeSuf)
+MAKENTUPLEO  =  src/make_ntuple.$(ObjSuf)
+MAKENTUPLE   =  bin/make_ntuple$(ExeSuf)
 # make a bunch of plots
 MAKEPLOTSO   =  src/make_plots.$(ObjSuf)
 MAKEPLOTS    =  bin/make_plots$(ExeSuf)
@@ -42,7 +42,7 @@ NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
 .PHONY:     READ
 
-all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKEPLOTS) $(AVLOCROOT)
+all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(AVLOCROOT)
 
 clean:
 		@rm -f $(AVLOCOBJS) core*  $(AVLOCLIB) $(AVLOCO) \
@@ -74,7 +74,7 @@ $(FLATMAP):	$(AVLOCLIB) $(FLATMAPO)
 			@echo "$@ done"
 
 $(AVLOCLIB):	$(AVLOCOBJS)
-		$(LD)  -dynamiclib -single_module -install_name $(CURDIR)/lib/$@ $(ALLLIBS) $^ $(OutPutOpt) $@
+		$(LD)  -dynamiclib -single_module -install_name $(CURDIR)/$@ $(ALLLIBS) $^ $(OutPutOpt) $@
 		@echo "$@ done"
 		@echo "libs $(SOFLAGS)" 
 

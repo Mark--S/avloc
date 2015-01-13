@@ -54,7 +54,7 @@ struct PhysicsNr {
 };
 
 // function to convert LED spectrum convoluted with the group velocity in water into an average and an error
-PhysicsNr GroupVelocity(string fibre_name, TGraph * water_group_velocity);
+PhysicsNr GroupVelocity(string fibre_name);
 
 // Calculate time of flight in ns
 PhysicsNr TimeOfFlight(TVector3 inject, TVector3 detect, PhysicsNr n_h2o, double offset);

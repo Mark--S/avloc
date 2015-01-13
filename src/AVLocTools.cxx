@@ -3,12 +3,15 @@
 // S.J.M.Peeters@sussex.ac.uk, June 2014
 //
 #include <assert.h>
+#include <iostream>
 
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TTree.h>
 #include <TSystem.h>
 #include <RAT/Log.hh>
+#include <RAT/DU/Utility.hh>
+#include <RAT/DU/GroupVelocity.hh>
 
 #include "include/AVLocTools.h"
 
@@ -74,7 +77,9 @@ PMTInfo GetPMTpositions(void) {
 LEDInfo GetLEDInfoFromFileName(string filename)
 { 
   string shortname  = filename.substr(filename.find_last_of('/')+1);
-  string fibre_name = shortname.substr(4, 6);
+  std::cout << "shortname " << shortname << std::endl;
+  string fibre_name = shortname.substr(6, 6);
+  std::cout << "fibrename " << fibre_name << std::endl;
   return GetLEDInfoFromFibreName(fibre_name);
 }
 
@@ -98,9 +103,11 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
   led_info.name = fibre_name;
   
   // get number
+  //std::cout << led_info.name << std::endl;
   string nr = led_info.name.substr(2,3);
   led_info.nr = atoi(nr.data());
   char letter = led_info.name[5];
+  //std::cout << letter << std::endl;
   if      ( letter == 'A' ) { led_info.sub = 0; }
   else if ( letter == 'B' ) { led_info.sub = 1; }
   else { cerr << "Unknown sub fibre: " << letter << " in " << led_info.name << endl; }
@@ -156,7 +163,7 @@ TNtuple * GetNtuple(TFile ** fpointer)
   TString filename = "summary_ntuple.root";
   if ( gSystem->FindFile("/home/sjp39/snoplus/avloc/data",filename) == 0 ) {
     cout << "CREATING NEW FILE " << filename << endl;
-    (*fpointer) = new TFile("/home/sjp39/snoplus/avloc/data/summary_ntuple.root","NEW");
+    (*fpointer) = new TFile("summary_ntuple.root","NEW");
     ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist");
   }
   else {
@@ -195,16 +202,25 @@ double get_value(TGraph * g, double x)
 // into an average and an error
 // for the weighted average calculation in one loop, see:
 // http://en.wikipedia.org/wiki/Mean_square_weighted_deviation
-PhysicsNr GroupVelocity(string fibre_name, TGraph * water_group_velocity) 
+PhysicsNr GroupVelocity(string fibre_name) 
 {
   LEDInfo   led_info = GetLEDInfoFromFibreName(fibre_name);
   int nbins  = led_info.spectrum->GetNbinsX();
   double sumw  = 0.; // sum_i (w_i)
   double sum   = 0.; // sum_i (w_i * x_i)
   double sumsq = 0.; // sum_i (w_i * x_i^2)
-  for ( int i=1 ; i <= nbins ; ++i ) {
+  double c = 299792458;
+  double h = 6.62606957e-34;
+  const double e = 1.602176565e-19;
+  const double f = h/e*c*1E-6*1E9; //  eV*nm = 1E-6 MeV * 1E9 nm
+  const RAT::DU::GroupVelocity& vel =  RAT::DU::Utility::Get()->GetGroupVelocity();
+  for ( int i=1 ; i <= nbins ; ++i ){
     double wi = led_info.spectrum->GetBinContent(i);
-    double xi = get_value(water_group_velocity,led_info.spectrum->GetBinCenter(i));
+    double energy = f*led_info.spectrum->GetBinCenter(i);
+    cout << "energy: "<< energy << endl;
+    const double time = vel.CalcByDistance(0.0,0.0,0.0,1.0);
+    cout << "time: " << time << endl;
+    double xi = 1.0/time;
     sumw  += wi;
     sum   += wi*xi;
     sumsq += wi*xi*xi;
@@ -232,4 +248,5 @@ PhysicsNr TimeOfFlight(TVector3 inject, TVector3 detect, PhysicsNr n_h2o, double
   tof.error = ev/vv*tof.value;
   return tof;	
 }
+
 
