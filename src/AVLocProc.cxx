@@ -9,6 +9,7 @@
 #include <RAT/DS/PMT.hh>
 #include "include/AVLocProc.h"
 #include "include/AVLocTools.h"
+#include <cstdio>
 
 using namespace std;
 
@@ -38,8 +39,14 @@ bool ProcessEventNtuple(RAT::DS::Entry * rDS, TNtuple * ntuple,
     for( int ipmt = 0; ipmt < pmtList.GetCount(); ++ipmt) {
       int PMTID = pmtList.GetPMT(ipmt).GetID();
       TVector3 dist(pmt_info.x_pos[PMTID],pmt_info.y_pos[PMTID],pmt_info.z_pos[PMTID]);
+      //printf("pmt position %f %f %f\n",dist.X(),dist.Y(),dist.Z());
+      //printf("led X:%f ledy:%f ledz:%f\n",led_info.position.X(),led_info.position.Y(),led_info.position.Z());
       dist -= led_info.position;
-      double EVoffset = 500 - GTTriggerDelay - (MHzTicks2Seconds(rEV.GetClockCount50(),50)*1000000000);
+      //printf("difference %f %f %f\n",dist.X(),dist.Y(),dist.Z());
+      RAT::DS::MCEV * mc = new RAT::DS::MCEV();
+      double gtTime = mc->GetGTTime();
+      double EVoffset = 500 - GTTriggerDelay - gtTime; 
+      //printf("Universal time %f Universal Time Days %u Universal Time Seconds %u  Clock Ticks:%llu EVOffset %f\n",rEV.GetUniversalTime().GetNanoSeconds(),rEV.GetUniversalTime().GetDays(),rEV.GetUniversalTime().GetSeconds(),rEV.GetClockCount50(),EVoffset);
       Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime()-EVoffset;
       ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag());
     }
@@ -48,11 +55,12 @@ bool ProcessEventNtuple(RAT::DS::Entry * rDS, TNtuple * ntuple,
 }
 
 //Taken from DataQualityProc.cc
-double MHzTicks2Seconds( unsigned long int ticks, int frequency ) 
+double MHzTicks2NanoSeconds( unsigned long int ticks, int frequency ) 
 {
     double seconds = 1.0 / static_cast<double>( frequency );
-    seconds *= 1.0e-6;
+    seconds *= 1.0e3;
     seconds *= static_cast<double>( ticks );
+    //std::cout << "time: " << seconds << std::endl;
     return seconds;
 }
 

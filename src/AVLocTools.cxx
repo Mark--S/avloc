@@ -12,6 +12,7 @@
 #include <RAT/Log.hh>
 #include <RAT/DU/Utility.hh>
 #include <RAT/DU/GroupVelocity.hh>
+#include <RAT/DB.hh>
 
 #include "include/AVLocTools.h"
 
@@ -161,14 +162,14 @@ TNtuple * GetNtuple(TFile ** fpointer)
 {
   TNtuple * ntuple = NULL;
   TString filename = "summary_ntuple.root";
-  if ( gSystem->FindFile("/home/sjp39/snoplus/avloc/data",filename) == 0 ) {
+  if ( gSystem->FindFile("./",filename) == 0 ) {
     cout << "CREATING NEW FILE " << filename << endl;
     (*fpointer) = new TFile("summary_ntuple.root","NEW");
     ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist");
   }
   else {
     cout << "REUSING OLD FILE " << filename << endl;
-    (*fpointer) = new TFile("/home/sjp39/snoplus/avloc/data/summary_ntuple.root","UPDATE");
+    (*fpointer) = new TFile("summary_ntuple.root","UPDATE");
     ntuple = (TNtuple*)(*fpointer)->Get("avloctuple");
     assert(ntuple);
   }
@@ -209,17 +210,18 @@ PhysicsNr GroupVelocity(string fibre_name)
   double sumw  = 0.; // sum_i (w_i)
   double sum   = 0.; // sum_i (w_i * x_i)
   double sumsq = 0.; // sum_i (w_i * x_i^2)
-  double c = 299792458;
-  double h = 6.62606957e-34;
-  const double e = 1.602176565e-19;
-  const double f = h/e*c*1E-6*1E9; //  eV*nm = 1E-6 MeV * 1E9 nm
-  const RAT::DU::GroupVelocity& vel =  RAT::DU::Utility::Get()->GetGroupVelocity();
+  //Unsure of of 10^-4 scaling factor  required for calc by distance method as 400nm->3.103125 * 1e-6 units of energy
+  double hc = 0.197*6.28318530718*10e-4;
+  //const double f = h/e*c*1E-6*1E9; //  eV*nm = 1E-6 MeV * 1E9 nm
+  //const RAT::DU::GroupVelocity& vel =  RAT::DU::Utility::Get()->GetGroupVelocity();
   for ( int i=1 ; i <= nbins ; ++i ){
     double wi = led_info.spectrum->GetBinContent(i);
-    double energy = f*led_info.spectrum->GetBinCenter(i);
-    cout << "energy: "<< energy << endl;
-    const double time = vel.CalcByDistance(0.0,0.0,0.0,1.0);
-    cout << "time: " << time << endl;
+    double energy = hc/led_info.spectrum->GetBinCenter(i);
+    //printf("wavlength:%f energy:%f\n", led_info.spectrum->GetBinCenter(i),energy);
+    //cout << "energy: "<< energy << endl;
+    const double time = RAT::DU::Utility::Get()->GetGroupVelocity().CalcByDistance(0.0,0.0,1.0,energy);
+    //cout.precision(15);
+    //cout << "time: " << time << endl;
     double xi = 1.0/time;
     sumw  += wi;
     sum   += wi*xi;
@@ -248,5 +250,6 @@ PhysicsNr TimeOfFlight(TVector3 inject, TVector3 detect, PhysicsNr n_h2o, double
   tof.error = ev/vv*tof.value;
   return tof;	
 }
+
 
 

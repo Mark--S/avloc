@@ -13,6 +13,6 @@
 bool ProcessEventBasic(RAT::DS::Entry * rDS);
 bool ProcessEventNtuple(RAT::DS::Entry * rDS, TNtuple * ntuple, 
 			LEDInfo & led_info, PMTInfo & pmt_info);
-double MHzTicks2Seconds( unsigned long int ticks, int frequency ) ;
+double MHzTicks2NanoSeconds( unsigned long int ticks, int frequency ) ;
 
 #endif
