@@ -55,8 +55,8 @@ int main(int argc,char **argv)
     return 0;
   }
   TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,500.,1);
-  //time_histograms(ntuple,distance,fibre_nr,sub_nr);
-  plot_offset(ntuple,distance,fibre_nr,sub_nr);
+  time_histograms(ntuple,distance,fibre_nr,sub_nr);
+  //plot_offset(ntuple,distance,fibre_nr,sub_nr);
   hflatmap->Write();
   plot_file->Close();
   

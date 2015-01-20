@@ -43,11 +43,12 @@ bool ProcessEventNtuple(RAT::DS::Entry * rDS, TNtuple * ntuple,
       //printf("led X:%f ledy:%f ledz:%f\n",led_info.position.X(),led_info.position.Y(),led_info.position.Z());
       dist -= led_info.position;
       //printf("difference %f %f %f\n",dist.X(),dist.Y(),dist.Z());
-      RAT::DS::MCEV * mc = new RAT::DS::MCEV();
-      double gtTime = mc->GetGTTime();
+      RAT::DS::MCEV  mc = rDS->GetMCEV(iEV);
+      double gtTime = mc.GetGTTime();
+      printf("Trigger Delay %f\n",GTTriggerDelay);
       double EVoffset = 500 - GTTriggerDelay - gtTime; 
       //printf("Universal time %f Universal Time Days %u Universal Time Seconds %u  Clock Ticks:%llu EVOffset %f\n",rEV.GetUniversalTime().GetNanoSeconds(),rEV.GetUniversalTime().GetDays(),rEV.GetUniversalTime().GetSeconds(),rEV.GetClockCount50(),EVoffset);
-      Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime()-EVoffset;
+      Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime();
       ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag());
     }
   }
