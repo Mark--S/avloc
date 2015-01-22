@@ -9,10 +9,7 @@
 include $(ROOTSYS)/etc/Makefile.arch
 -include $(ROOTSYS)/MyConfig.mk
 HdrSuf       = h
-#-----------------------------------------------------------------------------
-# special programs
-#-----------------------------------------------------------------------------
-# special root
+SOFLAGS       = #-----------------------------------------------------------------------------
 AVLOCROOTO   =  src/avlocroot.$(ObjSuf)
 AVLOCROOT    =  bin/avlocroot$(ExeSuf)
 # make summary ntuple
@@ -36,12 +33,13 @@ AVLOCLIB     =  lib/libAVLoc.$(DllSuf)
 #-----------------------------------------------------------------------------
 # libraries to be included
 #-----------------------------------------------------------------------------
-ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib -lRATEvent_Linux
+ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Linux
+NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 #-----------------------------------------------------------------------------
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
 .PHONY:     READ
 
-all:           $(FLATMAP) $(MAKEPLOTS) $(MAKENTUPLE) $(AVLOCSO)
+all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(AVLOCROOT)
 
 clean:
 		@rm -f $(AVLOCOBJS) core*  $(AVLOCLIB) $(AVLOCO) \
@@ -49,31 +47,41 @@ clean:
 		$(AVLOCROOT) $(MAKENTUPLE) $(MAKEPLOTS) $(FLATMAP)
 
 $(AVLOCROOT):	$(AVLOCROOTO) $(AVLOCLIB)
-		$(LD) $(LDFLAGS) $(ALLLIBS) $(AVLOCROOTO) $(AVLOCLIB) \
+		$(LD) $(LDFLAGS) $(ALLLIBS) $(NEXTLIBS) $(AVLOCROOTO) $(AVLOCLIB) \
 		$(OutPutOpt) $@
 		$(MT_EXE)
 		@echo "$@ done"
 
 $(MAKENTUPLE):	$(AVLOCLIB) $(MAKENTUPLEO)
-			$(LD) $(LDFLAGS) $(MAKENTUPLEO) $(AVLOCLIB) $(ALLLIBS) \
+			$(LD) $(LDFLAGS) $(MAKENTUPLEO) $(AVLOCLIB) $(ALLLIBS)  \
 			$(OutPutOpt)$@
 			$(MT_EXE)
 			@echo "$@ done"
 
 $(MAKEPLOTS):	$(AVLOCLIB) $(MAKEPLOTSO)
-			$(LD) $(LDFLAGS) $(MAKEPLOTSO) $(AVLOCLIB) $(ALLLIBS) \
+			$(LD) $(LDFLAGS) $(MAKEPLOTSO) $(AVLOCLIB) $(ALLLIBS) $(NEXTLIBS)\
 			$(OutPutOpt)$@
 			$(MT_EXE)
 			@echo "$@ done"
 
 $(FLATMAP):	$(AVLOCLIB) $(FLATMAPO)
-			$(LD) $(LDFLAGS) $(FLATMAPO) $(AVLOCLIB) $(ALLLIBS) \
+			$(LD) $(LDFLAGS) $(FLATMAPO) $(AVLOCLIB) $(ALLLIBS) $(NEXTLIBS)\
 			$(OutPutOpt)$@
 			$(MT_EXE)
 			@echo "$@ done"
 
 $(AVLOCLIB):	$(AVLOCOBJS)
-		$(LD) $(SOFLAGS) $(ALLLIBS) $^ $(OutPutOpt) $@
+		$(LD)  -shared $(ALLLIBS) $^ $(OutPutOpt) $@
+		@echo "$@ done"
+		@echo "libs $(SOFLAGS)" 
 
 .$(SrcSuf).$(ObjSuf):
 	$(CXX)  $(CXXFLAGS) -I. -I$(RATROOT)/include -c $< -o $@
+
+
+
+
+
+
+
+
