@@ -261,8 +261,8 @@ void time_histograms(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr
     for (unsigned int i = 0 ; i < 10000 ; ++i ) {
         if (histo_map[i] != NULL ) {
             // if at least 30 entries, calculate mean and rms
-            cout << "histo map " << i << " entries "<<histo_map[i]->GetEntries()<<endl;
-            if (histo_map[i]->GetEntries() > 0 ) {
+            //cout << "histo map " << i << " entries "<<histo_map[i]->GetEntries()<<endl;
+            if (histo_map[i]->GetEntries() > 30 ) {
                 histo_map[i]->Fit("gaus");
                 histo_map[i]->Write();
                 TF1 * f = histo_map[i]->GetFunction("gaus");
