@@ -8,6 +8,7 @@
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TTree.h>
+#include <TROOT.h>
 #include <TSystem.h>
 #include <RAT/Log.hh>
 #include <RAT/DU/Utility.hh>
@@ -49,18 +50,31 @@ void LoadDataBase(string logname)
 }
 
 PMTInfo GetPMTpositions(void) {
+  cout << "Loading PMT positions" << endl;
   const double offset = 56.7; // difference front PMT and bucket in mm
   RAT::DB* db = RAT::DB::Get();
   assert(db);
+  char* ratroot = getenv("RATROOT");
+  if (ratroot == static_cast<char*>(NULL)) {
+      cerr << "Environment variable $RATROOT must be set" << endl;
+      assert(ratroot);
+  }
+  string rat     = string(ratroot);
+    string pmtfile = rat;
+  pmtfile += "/data/pmt/snoman.ratdb";
+  db->LoadFile(pmtfile);
   RAT::DBLinkPtr pmtInfo = db->GetLink("PMTINFO");
   assert(pmtInfo);
   PMTInfo pmt_info;
+  cout << "Getting Arrays" << endl;
   pmt_info.x_pos = pmtInfo->GetDArray("x");
   pmt_info.y_pos = pmtInfo->GetDArray("y");
   pmt_info.z_pos = pmtInfo->GetDArray("z");
+  cout << "Got Position arrays" << endl;
   vector<double> xDir = pmtInfo->GetDArray("v");
   vector<double> yDir = pmtInfo->GetDArray("u");
   vector<double> zDir = pmtInfo->GetDArray("w");
+  cout << "Obtained ARRAYS" << endl;
   for ( unsigned int i = 0 ; i < xDir.size() ; ++i ) {
     TVector3 pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
     TVector3 dir(xDir[i],yDir[i],zDir[i]);
@@ -133,13 +147,20 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
   assert ( max > min );
   assert ( nbins != 0 );
   double bw  = (max-min)/(float)nbins;
-  led_info.spectrum = new TH1D("hLEDData",title,nbins,min-0.5*bw,max+0.5*bw);
+  try{
+      delete gROOT->FindObject("hLEDData");
+      led_info.spectrum = new TH1D("hLEDData",title,nbins,min-0.5*bw,max+0.5*bw);
+  }
+  catch(int e){
+      led_info.spectrum = new TH1D("hLEDData",title,nbins,min-0.5*bw,max+0.5*bw);
+  }
   led_info.spectrum->SetXTitle("wavelength (nm)");
   for (unsigned int i = 0 ; i < wl.size() ; ++i) {
     led_info.spectrum->SetBinContent(i+1,amp[i]);
   }
 
   // report 
+  /*
   cout << "LED: " << led_info.name;
   cout << " (" << led_info.nr << " - " << led_info.sub  << ") @ (";
   cout << led_info.position.X() << ",";
@@ -147,6 +168,7 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
   cout << led_info.position.Z() << ")";
   cout << "; wavelength is (" << led_info.spectrum->GetMean() << " +/- ";
   cout << led_info.spectrum->GetRMS() << " nm)" << endl;
+  */
 
   return led_info;
 }
