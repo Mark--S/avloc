@@ -182,9 +182,13 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
 TNtuple * GetNtuple(TFile ** fpointer,TString outputFile)
 {
   TNtuple * ntuple = NULL;
-  TString filename = "summary_ntuple.root";
+  TString filename = "summary_ntuple";
   filename+=outputFile;
-  if ( gSystem->FindFile("./",filename) == 0 ) {
+  filename+=".root";
+  TString filenameTest;
+  filenameTest = filename;
+  if ( gSystem->FindFile("./",filenameTest) == 0 ) {
+      cout << "Filename is: "<<filename<<endl;
     cout << "CREATING NEW FILE " << filename << endl;
     (*fpointer) = new TFile(filename,"NEW");
     ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist");

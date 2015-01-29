@@ -45,9 +45,12 @@ int main(int argc,char **argv)
   assert(tree);  
   LoadDataBase("make_ntuple.log");
   LEDInfo led_info = GetLEDInfoFromFileName(filename);
-
+  //cout << "FILENAME IS: "<<filename<<endl;
+  unsigned first = filename.find("/");
+  unsigned last = filename.find(".");
+  string filenameNew = filename.substr(first+1,last-first-1);
   TFile * ntuple_file = NULL;
-  TNtuple * ntuple = GetNtuple(&ntuple_file,filename);
+  TNtuple * ntuple = GetNtuple(&ntuple_file,filenameNew);
   assert(ntuple_file);
   assert(ntuple);
 
@@ -88,7 +91,9 @@ int main(int argc,char **argv)
   pmt_info.x_pos = pmtInfo->GetDArray("x");
   pmt_info.y_pos = pmtInfo->GetDArray("y");
   pmt_info.z_pos = pmtInfo->GetDArray("z");
-
+  string geofile = rat;
+  geofile += "/data/geo/snoplus_water.geo";
+  db->Load(geofile);
   //RAT::DB::Get()->LoadDefaults();
   db->Load(pmtfile);
   RAT::DU::Utility::Get()->BeginOfRun();
