@@ -1,7 +1,7 @@
-#include <include/avlocTools.h>
+#include <include/AVLocTools.h>
 #include <RAT/DB.hh>
 #include <TFile.h>
-#include <TNTuple.h>
+//#include <TNTuple.h>
 #include <TVector3.h>
 #include <TMinuit.h>
 #include <RAT/DU/Utility.hh>
@@ -100,7 +100,7 @@ int main(){
         min.SetFCN(funcn);
         min.SetErrorDef(0.5);
         min.SetPrintLevel(1);
-        string fibreRad = "Radius of AV using fibre "+std::to_string(fibreNumbers[i]);
+        string fibreRad = "Radius of AV using fibre "+std::to_string((long double)fibreNumbers[i]);
         min.DefineParameter(0,fibreRad.c_str(),6000,50,5500,6500);
         min.Migrad();
         delete[] numHits;

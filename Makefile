@@ -36,7 +36,7 @@ AVLOCLIB     =  lib/libAVLoc.$(DllSuf)
 #-----------------------------------------------------------------------------
 # libraries to be included
 #-----------------------------------------------------------------------------
-ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Linux
+ALLLIBS      = $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Linux
 NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 #-----------------------------------------------------------------------------
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
@@ -85,7 +85,7 @@ $(AVLOCLIB):	$(AVLOCOBJS)
 		@echo "libs $(SOFLAGS)" 
 
 .$(SrcSuf).$(ObjSuf):
-	$(CXX)  $(CXXFLAGS) -I. -I$(RATROOT)/include -c $< -o $@
+	$(CXX)  -std=c++0x $(CXXFLAGS) -I. -I$(RATROOT)/include -c $< -o $@
 
 
 

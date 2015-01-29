@@ -16,7 +16,6 @@
 #include <RAT/DB.hh>
 
 #include "include/AVLocTools.h"
-
 // function to load a root file
 void LoadRootFile(string filename, TTree **tree, RAT::DS::Entry **rDS, RAT::DS::Run **rRun)
 {

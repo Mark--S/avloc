@@ -27,7 +27,7 @@ struct LEDInfo {
   int      nr;    // fibre number
   int      sub;   // 0 for A fibre, 1 for B fibre
   TVector3 position;
-  TH1D *   spectrum = NULL;
+  TH1D *   spectrum;
 };
 
 struct PMTInfo {  
