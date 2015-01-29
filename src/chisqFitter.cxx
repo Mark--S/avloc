@@ -43,6 +43,9 @@ void timeCuts(int);
 void funcn(Int_t & npar, Double_t * deriv, Double_t& f, Double_t * par, Int_t flag){
     double chisq=0;
     for(int i=0; i<numPMTS; i++){
+        if(numHits[i]==0){
+            continue;
+        }
         double trial = trialFunction(fibreNum,i,par[0]);
         //cout << "hit Times Avg: "<<hitTimes[i]<<" hitErrors "<<hitErrors[i]<<" PMT Number "<<i<<endl;
         chisq+=((trial-hitTimes[i])/hitErrors[i])*((trial-hitTimes[i])/hitErrors[i]);

@@ -10,6 +10,9 @@ include $(ROOTSYS)/etc/Makefile.arch
 -include $(ROOTSYS)/MyConfig.mk
 HdrSuf       = h
 SOFLAGS       = #-----------------------------------------------------------------------------
+# special programs
+#-----------------------------------------------------------------------------
+# special root
 AVLOCROOTO   =  src/avlocroot.$(ObjSuf)
 AVLOCROOT    =  bin/avlocroot$(ExeSuf)
 # make summary ntuple
@@ -19,8 +22,8 @@ MAKENTUPLE   =  bin/make_ntuple$(ExeSuf)
 MAKEPLOTSO   =  src/make_plots.$(ObjSuf)
 MAKEPLOTS    =  bin/make_plots$(ExeSuf)
 # make a quick flatmap
-FLATMAPO     =  src/plot_flatmap.$(ObjSuf)
-FLATMAP      =  bin/plot_flatmap$(ExeSuf)
+#FLATMAPO     =  src/plot_flatmap.$(ObjSuf)
+#FLATMAP      =  bin/plot_flatmap$(ExeSuf)
 # make chisq fitter for AV radius
 MAKEFITTERO	 = src/chisqFitter.$(ObjSuf)
 MAKEFITTER = bin/chisqFitter$(ExeSuf)
@@ -36,13 +39,13 @@ AVLOCLIB     =  lib/libAVLoc.$(DllSuf)
 #-----------------------------------------------------------------------------
 # libraries to be included
 #-----------------------------------------------------------------------------
-ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Linux
+ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Darwin
 NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 #-----------------------------------------------------------------------------
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
 .PHONY:     READ
 
-all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(MAKEFITTER) $(AVLOCROOT)
+all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(MAKEFITTER) $(AVLOCROOT) 
 
 clean:
 		@rm -f $(AVLOCOBJS) core*  $(AVLOCLIB) $(AVLOCO) \
@@ -80,7 +83,7 @@ $(MAKEFITTER):	$(AVLOCLIB) $(MAKEFITTERO)
 			@echo "$@ done"
 
 $(AVLOCLIB):	$(AVLOCOBJS)
-		$(LD)  -shared $(ALLLIBS) $^ $(OutPutOpt) $@
+		$(LD)  -dynamiclib -single_module -install_name $(CURDIR)/$@ $(ALLLIBS) $^ $(OutPutOpt) $@
 		@echo "$@ done"
 		@echo "libs $(SOFLAGS)" 
 
