@@ -55,8 +55,18 @@ int main(){
     //Obtaining the fibres and sub fibre we want to fire from
     LoadDataBase("fitter.log");    
     RAT::DB* db = RAT::DB::Get();
-    db->Load( "/Users/markstringer/Documents/PHD/rat/snoing/install/rat-5.0.0/data/geo/snoplus_water.geo" );
-    db->Load("/Users/markstringer/Documents/PHD/rat/snoing/install/rat-5.0.0/data/pmt/snoman.ratdb");
+    char* ratroot = getenv("RATROOT");
+    if (ratroot == static_cast<char*>(NULL)) {
+        cerr << "Environment variable $RATROOT must be set" << endl;
+        assert(ratroot);
+    }
+    string rat     = string(ratroot);
+    string pmtfile = rat;
+    pmtfile += "/data/pmt/snoman.ratdb";
+    string geofile = rat;
+    geofile += "/data/geo/snoplus_water.geo";
+    db->Load(pmtfile);
+    db->Load(geofile);
     std::cout << "DOING BEGIN OF RUN§" << std::endl;
     RAT::DU::Utility::Get()->BeginOfRun();
     std::cout << "DONe BEGIN OF RUN§" << std::endl;

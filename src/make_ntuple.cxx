@@ -47,7 +47,7 @@ int main(int argc,char **argv)
   LEDInfo led_info = GetLEDInfoFromFileName(filename);
 
   TFile * ntuple_file = NULL;
-  TNtuple * ntuple = GetNtuple(&ntuple_file);
+  TNtuple * ntuple = GetNtuple(&ntuple_file,filename);
   assert(ntuple_file);
   assert(ntuple);
 
@@ -90,8 +90,7 @@ int main(int argc,char **argv)
   pmt_info.z_pos = pmtInfo->GetDArray("z");
 
   //RAT::DB::Get()->LoadDefaults();
-  db->Load( "/Users/markstringer/Documents/PHD/rat/snoing/install/rat-5.0.0/data/geo/snoplus_water.geo" );
-  //db->Load( "[pmt_info_file]" );
+  db->Load(pmtfile);
   RAT::DU::Utility::Get()->BeginOfRun();
   
   for( int iEvent = 0; iEvent < tree->GetEntries() ; ++iEvent) {

@@ -179,18 +179,19 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
 // 2 - lcn       : logical channel number for the PMT
 // 3 - time      : hit time (ns)
 // 4 - dist      : distance from fibre (mm)
-TNtuple * GetNtuple(TFile ** fpointer)
+TNtuple * GetNtuple(TFile ** fpointer,TString outputFile)
 {
   TNtuple * ntuple = NULL;
   TString filename = "summary_ntuple.root";
+  filename+=outputFile;
   if ( gSystem->FindFile("./",filename) == 0 ) {
     cout << "CREATING NEW FILE " << filename << endl;
-    (*fpointer) = new TFile("summary_ntuple.root","NEW");
+    (*fpointer) = new TFile(filename,"NEW");
     ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist");
   }
   else {
     cout << "REUSING OLD FILE " << filename << endl;
-    (*fpointer) = new TFile("summary_ntuple.root","UPDATE");
+    (*fpointer) = new TFile(filename,"UPDATE");
     ntuple = (TNtuple*)(*fpointer)->Get("avloctuple");
     assert(ntuple);
   }

@@ -46,7 +46,7 @@ LEDInfo GetLEDInfoFromFibreNr(int fibre_nr, int subnr); // subnr: 0 for A fibre 
 LEDInfo GetLEDInfoFromFibreName(string fibre_name);
 
 // function to gain access to a (re)writable ntuple for summary data for avloc
-TNtuple * GetNtuple(TFile ** fpointer);
+TNtuple * GetNtuple(TFile ** fpointer, TString filename);
 
 struct PhysicsNr {
   double value;
