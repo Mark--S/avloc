@@ -24,6 +24,9 @@ MAKEPLOTS    =  bin/make_plots$(ExeSuf)
 # make a quick flatmap
 #FLATMAPO     =  src/plot_flatmap.$(ObjSuf)
 #FLATMAP      =  bin/plot_flatmap$(ExeSuf)
+# make chisq fitter for AV radius
+MAKEFITTERO	 = src/chisqFitter.$(ObjSuf)
+MAKEFITTER = bin/chisqFitter$(ExeSuf)
 #-----------------------------------------------------------------------------
 # my object files for the library
 #-----------------------------------------------------------------------------
@@ -42,7 +45,7 @@ NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
 .PHONY:     READ
 
-all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(AVLOCROOT)
+all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(MAKEFITTER) $(AVLOCROOT) 
 
 clean:
 		@rm -f $(AVLOCOBJS) core*  $(AVLOCLIB) $(AVLOCO) \
@@ -69,6 +72,12 @@ $(MAKEPLOTS):	$(AVLOCLIB) $(MAKEPLOTSO)
 
 $(FLATMAP):	$(AVLOCLIB) $(FLATMAPO)
 			$(LD) $(LDFLAGS) $(FLATMAPO) $(AVLOCLIB) $(ALLLIBS) $(NEXTLIBS)\
+			$(OutPutOpt)$@
+			$(MT_EXE)
+			@echo "$@ done"
+
+$(MAKEFITTER):	$(AVLOCLIB) $(MAKEFITTERO)
+			$(LD) $(LDFLAGS) $(MAKEFITTERO) $(AVLOCLIB) $(ALLLIBS) $(NEXTLIBS)\
 			$(OutPutOpt)$@
 			$(MT_EXE)
 			@echo "$@ done"
