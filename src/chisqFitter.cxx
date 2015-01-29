@@ -64,7 +64,7 @@ int main(){
     numPMTS = pmts.x_pos.size();
     cout << "Obtained PMT positions "<< pmts.x_pos[1000] << endl;
     //Loading up root file
-    TFile * input = TFile::Open("summary_ntuple.root");
+    TFile * input = TFile::Open("summary_ntupleOffsetWorking.root");
     ntuple = (TNtuple*)input->Get("avloctuple");
     //Obtaining the number of fibres
     cout << "Getting fibre Numbers" << endl;
@@ -101,7 +101,7 @@ int main(){
         min.SetErrorDef(0.5);
         min.SetPrintLevel(1);
         string fibreRad = "Radius of AV using fibre "+std::to_string(fibreNumbers[i]);
-        min.DefineParameter(0,fibreRad.c_str(),9000,50,8500,9500);
+        min.DefineParameter(0,fibreRad.c_str(),6000,50,5500,6500);
         min.Migrad();
         delete[] numHits;
         delete[] hitTimes;
@@ -113,8 +113,8 @@ int main(){
 //Method to perform the time and distance cuts and fill up the hitTimes and hitError arrays with the data to be fitted to
 void timeCuts(int fibreNumber){
     //Calculating time cut limits Using fibre FT003A and PMT LCN 2755
-    double upperTime = trialFunction(3,2755,9500);
-    double lowerTime = trialFunction(3,2755,8500);
+    double upperTime = trialFunction(4,3944,5500);
+    double lowerTime = trialFunction(4,3944,6500);
     int events = ntuple->GetEntries();
     for(int i=0; i<events; i++){
         ntuple->GetEntry(i);
@@ -124,23 +124,20 @@ void timeCuts(int fibreNumber){
         double time = (double)ntuple->GetArgs()[3];
         double dis  = (double)ntuple->GetArgs()[4]; 
         //Fibre number cut
-        //cout << "Upper Time "<<upperTime<<" Lower Time "<<lowerTime<<" Actual Time"<<time<<endl;
+        cout << "Upper Time "<<upperTime<<" Lower Time "<<lowerTime<<" Actual Time"<<time<<endl;
         if(fibre == fibreNumber){
-            //Distance cut 
-            if(dis<distCut){
-                //Time Cuts
-                if(time>lowerTime && time<upperTime){
-                    cout << "Got past cuts"<<endl;
-                    numHits[lcn]++;
-                    hitTimes[lcn]+=time;
-                }
+            //Time Cuts
+            if(time>lowerTime && time<upperTime){
+                cout << "Got past cuts"<<endl;
+                numHits[lcn]++;
+                hitTimes[lcn]+=time;
             }
         }
     }
     //Iterating over the hitTimes array and dividing by numhits to get average
     for(int i=0; i<numPMTS; i++){
         hitTimes[i]/=numHits[i];
-        cout << "Hit Times: "<<hitTimes[i]<<" num Hits "<<numHits[i]<<endl;
+        //cout << "Hit Times: "<<hitTimes[i]<<" num Hits "<<numHits[i]<<endl;
     }
     //Now iterating over again to get the errors 
     for(int i=0; i<events; i++){
@@ -152,12 +149,9 @@ void timeCuts(int fibreNumber){
         double dis  = (double)ntuple->GetArgs()[4]; 
         //Fibre Number cut
         if(fibre==fibreNumber){
-            //Distance cut 
-            if(dis<distCut){
-                //Time Cuts
-                if(time>lowerTime && time< upperTime){
-                    hitErrors[lcn]+= (time-hitTimes[lcn])*(time-hitTimes[lcn]);
-                }
+            //Time Cuts
+            if(time>lowerTime && time< upperTime){
+                hitErrors[lcn]+= (time-hitTimes[lcn])*(time-hitTimes[lcn]);
             }
         }
     }
@@ -178,7 +172,7 @@ double trialFunction(int fibreNumber, int LCN,double RAV){
     double calcTime = ((RAV*norm)-LEDPos).Mag()+(PMTPos-(RAV*norm)).Mag();
     //cout <<" Distance Travelled "<<calcTime<<endl;
     calcTime = calcTime/vg;
-    cout << "calcTime: "<<calcTime<< " Fibre number: "<<fibreNumber<<" PMT LCN: "<<LCN<<endl;
+    //cout << "calcTime: "<<calcTime<< " Fibre number: "<<fibreNumber<<" PMT LCN: "<<LCN<<endl;
     return calcTime;
 };
 

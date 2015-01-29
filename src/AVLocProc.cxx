@@ -48,7 +48,7 @@ bool ProcessEventNtuple(RAT::DS::Entry * rDS, TNtuple * ntuple,
       //printf("Trigger Delay %f\n",GTTriggerDelay);
       double EVoffset = 500 - GTTriggerDelay - gtTime; 
       //printf("Universal time %f Universal Time Days %u Universal Time Seconds %u  Clock Ticks:%llu EVOffset %f\n",rEV.GetUniversalTime().GetNanoSeconds(),rEV.GetUniversalTime().GetDays(),rEV.GetUniversalTime().GetSeconds(),rEV.GetClockCount50(),EVoffset);
-      Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime();
+      Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime()-EVoffset;
       ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag());
     }
   }
