@@ -244,9 +244,10 @@ void time_histograms(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr
                 histo_map[lcn] = new TH1I(name,name,51,-0.5,50.5);
                 histo_map[lcn]->SetXTitle("time (ns)");
             }
+            //cout << "Filling Histogram "<<endl;
             //This is the line causing the bug time offset not like the old stuff
-            if ( fibre == fibre_nr && sub == sub_nr && time-250. > 0. && time-250. < 50. ) {
-                histo_map[lcn]->Fill(time-250.);
+            if ( fibre == fibre_nr && sub == sub_nr && time > 0. && time < 50. ) {
+                histo_map[lcn]->Fill(time);
             }
         }
     }
@@ -261,7 +262,7 @@ void time_histograms(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr
     for (unsigned int i = 0 ; i < 10000 ; ++i ) {
         if (histo_map[i] != NULL ) {
             // if at least 30 entries, calculate mean and rms
-            //cout << "histo map " << i << " entries "<<histo_map[i]->GetEntries()<<endl;
+            cout << "histo map " << i << " entries "<<histo_map[i]->GetEntries()<<endl;
             if (histo_map[i]->GetEntries() > 30 ) {
                 histo_map[i]->Fit("gaus");
                 histo_map[i]->Write();
@@ -271,7 +272,7 @@ void time_histograms(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr
                 double si = f->GetParameter(2);
                 time_summary->SetBinContent(i+1,mu);
                 time_summary->SetBinError  (i+1,si);
-                cout << "Filling histogram" << endl;
+                //cout << "Filling histogram" << endl;
                 time_histo->Fill(mu,1./(si*si));
             }	
         }
@@ -308,10 +309,10 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 histo_map[lcn] = new TH1I(name,name,51,-25.5,25.5);
                 histo_map[lcn]->SetXTitle("time (ns)");
             }
-            if ( fibre == fibre_nr && time-250. > 0. && time-250. < 50. ) {
+            if ( fibre == fibre_nr && time > 0. && time < 50. ) {
                 TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
                 PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
-                histo_map[lcn]->Fill(time-250.-tof.value);
+                histo_map[lcn]->Fill(time-tof.value);
             }
         }
     }
@@ -327,7 +328,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     for (unsigned int i = 0 ; i < 10000 ; ++i ) {
         if (histo_map[i] != NULL ) {
             // if at least 30 entries, calculate mean and rms
-            if (histo_map[i]->GetEntries() > 30 ) {
+            if (histo_map[i]->GetEntries() > 200 ) {
                 histo_map[i]->Fit("gaus");
                 histo_map[i]->Write();
                 TF1 * f = histo_map[i]->GetFunction("gaus");
