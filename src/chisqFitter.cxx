@@ -9,6 +9,7 @@
 #include <RAT/DB.hh>
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 using namespace std;
 int fibre_nr;
@@ -57,6 +58,7 @@ void funcn(Int_t & npar, Double_t * deriv, Double_t& f, Double_t * par, Int_t fl
 }
 
 int main(){
+    stringstream ss;
     //Obtaining the fibres and sub fibre we want to fire from
     LoadDataBase("fitter.log");    
     RAT::DB* db = RAT::DB::Get();
@@ -97,7 +99,7 @@ int main(){
         }
     }
     cout << "Obtained fibre numbers" << endl;
-    for(int i=0; i<fibreNumbers.size(); i++){
+    for(unsigned int i=0; i<fibreNumbers.size(); i++){
         cout << "Fibres: "<<fibreNumbers[i]<<endl;
     }
     //THIS RETURNS NAN NEED TO FIX POSSIBLY OTHER BUGS IN CODE WHERE THIS USED AS WELL
@@ -107,11 +109,17 @@ int main(){
     cout << "Group Velocity: " << vg << endl;
     //Allocating hit time means, errors, and num Hits;
     cout<<"Starting Fits"<< endl;
-    for(int i=0; i<fibreNumbers.size(); i++){
+    for(unsigned int i=0; i<fibreNumbers.size(); i++){
         fibreNum = fibreNumbers[i];
-        numHits = new double[numPMTS];
-        hitTimes = new double[numPMTS];
-        hitErrors = new double[numPMTS];
+        numHits = (double *) malloc(sizeof(double)*numPMTS);
+        hitTimes = (double *) malloc(sizeof(double)*numPMTS);
+        hitErrors = (double *) malloc(sizeof(double)*numPMTS);
+        for(int i=0; i<numPMTS; i++){
+            numHits[i] = 0;
+            hitTimes[i] = 0;
+            hitErrors[i] = 0;
+
+        }
         cout << "Performing Time cuts" << endl;
         timeCuts(fibreNum);
         cout << "Completed Time cuts" << endl;
@@ -119,12 +127,17 @@ int main(){
         min.SetFCN(funcn);
         min.SetErrorDef(0.5);
         min.SetPrintLevel(1);
-        string fibreRad = "Radius of AV using fibre "+std::to_string((long double)fibreNumbers[i]);
+        string fibreNum;
+        ss << fibreNumbers[i];
+        ss >> fibreNum;
+        ss.clear();
+        string fibreRad = "fibre "+fibreNum;
+        cout << fibreRad <<endl;
         min.DefineParameter(0,fibreRad.c_str(),6000,50,5500,6500);
         min.Migrad();
-        delete[] numHits;
-        delete[] hitTimes;
-        delete[] hitErrors;
+        free(numHits);
+        free(hitTimes);
+        free(hitErrors);
     }
     return 0;
 }
@@ -132,14 +145,28 @@ int main(){
 //Method to perform the time and distance cuts and fill up the hitTimes and hitError arrays with the data to be fitted to
 void timeCuts(int fibreNumber){
     //Calculating time cut limits Using fibre FT003A and PMT LCN 2755
-    double upperTime = trialFunction(3,3944,4500);
-    double lowerTime = trialFunction(3,3944,7500);
-    double rPSUP = 8900;
-    double rAV = 6000;
+    //Upper time is pmt just below dist cut seperation 2086mm
+    //double upperTime = trialFunction(14,6459,5500);
+    //Lower time is pmt close to fibre seperation 152mm
+    //double lowerTime = trialFunction(3,2329,6500);
+    //double rPSUP = 8900;
+    //double rAV = 6000;
     //Big number is 14.5 deg in rad
-    double phi =asin((rPSUP-rAV)*tan(0.253072742)/rAV);
-    double distCut = (rPSUP-rAV)*2*(0.253072742+phi);
+    //double phi =asin((rPSUP-rAV)*tan(0.253072742)/rAV);
+    //Phi value for upper time limit assuming rav shifited 50cm away
+    //double phiUpper =asin((rPSUP-rAV+500)*tan(0.253072742)/rAV);
+    //double distCut = 2*sin(phi)*rPSUP;
+    //Angle of reflection off AV see logbook
+    //double xAngle = 0.253072742+phiUpper;
+    //Minus 500 term for AV being 50cm closer as minimum path
+    //double lowerTime = 2*(rPSUP-rAV-500)/vg;
+    //Have to divide by 2 to get hypotenuse as dist cut double, but also have a factor of 2 for light to av and light reflected off AV factors cancel
+    //double upperTime = distCut/(vg*sin(xAngle));
+    double distCut = 2500;
+    double lowerTime = 10;
+    double upperTime = 30;
     cout << "Distance Cut is :"<< distCut << endl;
+    cout << "Upper Time "<<upperTime<<" Lower Time "<<lowerTime<<endl;
     int events = ntuple->GetEntries();
     for(int i=0; i<events; i++){
         ntuple->GetEntry(i);
@@ -150,13 +177,13 @@ void timeCuts(int fibreNumber){
         double dis  = (double)ntuple->GetArgs()[4]; 
         //Fibre number cut
         //cout << "Upper Time "<<upperTime<<" Lower Time "<<lowerTime<<" Actual Time"<<time<<endl;
-        //cout << "Fibre: "<<fibre<<"  Fibre Number:"<<fibreNumber<<endl;
         if(fibre == fibreNumber){
             //Distance cuts
             if(dis < distCut){
                 //Time Cuts
                 if(lowerTime<time && time<upperTime){
-                    //cout << "Got past cuts"<<endl;
+                    //cout << "Fibre: "<<fibre<<"  Fibre Number:"<<fibreNumber<<"  PMT LCN: "<<lcn<<"  Distance Cuts:  "<<dis<<endl;
+                    //cout << "Got past cuts LCN: "<<lcn<<endl;
                     numHits[lcn]++;
                     hitTimes[lcn]+=time;
                 }
@@ -170,7 +197,7 @@ void timeCuts(int fibreNumber){
         if(numHits[i]<=30){
             hitTimes[i] = 0;
         }
-        //cout << "Hit Times: "<<hitTimes[i]<<" num Hits "<<numHits[i]<<endl;
+       //cout << "Hit Times: "<<hitTimes[i]<<" num Hits "<<numHits[i]<<endl;
     }
     //Now iterating over again to get the errors 
     for(int i=0; i<events; i++){
@@ -199,9 +226,14 @@ void timeCuts(int fibreNumber){
             numHits[i] = 0;
             continue;
         }
-        cout << "Hit errors before nomalization and sqrt: "<<hitErrors[i]<<endl;
+        //cout << "Hit errors before  nomalization and sqrt: "<<hitErrors[i]<<endl;
         hitErrors[i]/=numHits[i]-1;
         hitErrors[i] = sqrt(hitErrors[i]);
+        //cout << "Num Hits "<<numHits[i]<<endl;
+     //  cout << "Hit errors after  nomalization and sqrt: "<<hitErrors[i]<<endl;
+        if(hitErrors[i]==0){
+            numHits[i] = 0;
+        }
     };
 
 };

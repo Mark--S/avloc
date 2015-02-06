@@ -8,6 +8,9 @@
 #include <RAT/DS/Entry.hh>
 #include <RAT/DS/EV.hh>
 #include <RAT/DB.hh>
+#include <RAT/DU/Utility.hh>
+#include <RAT/DU/GroupVelocity.hh>
+#include <RAT/DU/LightPathCalculator.hh>
 
 #include <TF1.h>
 #include <TFile.h>
@@ -286,7 +289,9 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
 {
     LEDInfo   led    = GetLEDInfoFromFibreNr(fibre_nr, sub_nr);
     PMTInfo pmt_info = GetPMTpositions();
-
+    RAT::DU::GroupVelocity  gv = RAT::DU::Utility::Get()->GetGroupVelocity();
+    RAT::DU::LightPathCalculator lp = RAT::DU::Utility::Get()->GetLightPathCalculator();
+    lp.SetELLIEReflect(true);
     // effective refractive index:
     // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
     PhysicsNr n_h2o; 
@@ -294,7 +299,13 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     n_h2o.error = 0.0021;
     // Loop over ntuple
     TH1I * histo_map[10000];
+    TH1D * distanceInAV[10000];
+    TH1D * distanceInWater[10000];
+    TH1D * distanceInScint[10000];
     for (unsigned int i = 0 ; i < 10000 ; ++i ) histo_map[i] = NULL;
+    for (unsigned int i = 0 ; i < 10000 ; ++i ) distanceInAV[i] = NULL;
+    for (unsigned int i = 0 ; i < 10000 ; ++i ) distanceInWater[i] = NULL;
+    for (unsigned int i = 0 ; i < 10000 ; ++i ) distanceInScint[i] = NULL;
     unsigned int nev = ntuple->GetEntries();
     for (unsigned int i = 0 ; i < nev ; ++i) {
         ntuple->GetEntry(i);
@@ -305,14 +316,38 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
             int    fibre  = (int)ntuple->GetArgs()[0];
             if ( histo_map[lcn] == NULL ) {
                 char name[128];
+                char nameAV[128];
+                char nameWater[128];
+                char nameScint[128];
                 sprintf(name,"pmt%i",lcn);
+                sprintf(nameAV,"dist in AV %i",lcn);
+                sprintf(nameWater,"dist in Water %i",lcn);
+                sprintf(nameScint,"dist in Scint  %i",lcn);
                 histo_map[lcn] = new TH1I(name,name,51,-25.5,25.5);
+                distanceInAV[lcn] = new TH1D(nameAV,nameAV,50,-20,200);
+                distanceInWater[lcn] = new TH1D(nameWater,nameWater,500,20,8000);
+                distanceInScint[lcn] = new TH1D(nameScint,nameScint,50,-20,200);
                 histo_map[lcn]->SetXTitle("time (ns)");
+                distanceInAV[lcn]->SetXTitle("distance (mm)");
+                distanceInScint[lcn]->SetXTitle("distance (mm)");
+                distanceInWater[lcn]->SetXTitle("distance (mm)");
             }
             if ( fibre == fibre_nr && time > 0. && time < 50. ) {
                 TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
-                PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
-                histo_map[lcn]->Fill(time-tof.value);
+                //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
+                TVector3 hypPMTPos(0,0,0);
+                double lambda = 508;
+                double localityVal = 20.0;
+                double energy = 0.00000243658;
+                lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
+                double distInWater = lp.GetDistInWater();
+                double distInScint = lp.GetDistInScint();
+                double distInAV = lp.GetDistInAV();
+                double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+                histo_map[lcn]->Fill(time-timeOfFlight);
+                distanceInAV[lcn]->Fill(distInAV);
+                distanceInWater[lcn]->Fill(distInWater);
+                distanceInScint[lcn]->Fill(distInScint);
             }
         }
     }
@@ -331,6 +366,9 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
             if (histo_map[i]->GetEntries() > 200 ) {
                 histo_map[i]->Fit("gaus");
                 histo_map[i]->Write();
+                distanceInAV[i]->Write();
+                distanceInWater[i]->Write();
+                distanceInScint[i]->Write();
                 TF1 * f = histo_map[i]->GetFunction("gaus");
                 assert(f);
                 double mu = f->GetParameter(1);
