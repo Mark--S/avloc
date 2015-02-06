@@ -10,7 +10,8 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
-
+#include <RAT/DU/GroupVelocity.hh>
+#include <RAT/DU/LightPathCalculator.hh>
 using namespace std;
 int fibre_nr;
 int sub_nr;
@@ -22,6 +23,8 @@ PMTInfo pmts;
 TNtuple * ntuple;
 TVector3  LEDPos;
 TVector3  PMTPos;
+RAT::DU::LightPathCalculator lp;
+RAT::DU::GroupVelocity gv;
 double vg;
 double error = (1.5*1.5 + 2.0*2.0);
 //Number of times pmt is hit
@@ -79,6 +82,9 @@ int main(){
     std::cout << "DONe BEGIN OF RUN§" << std::endl;
     pmts = GetPMTpositions();
     numPMTS = pmts.x_pos.size();
+    gv = RAT::DU::Utility::Get()->GetGroupVelocity();
+    lp = RAT::DU::Utility::Get()->GetLightPathCalculator();
+    lp.SetELLIEReflect(true);
     cout << "Obtained PMT positions "<< pmts.x_pos[1000] << endl;
     //Loading up root file
     TFile * input = TFile::Open("totalNtupleBackend.root");
@@ -241,14 +247,24 @@ void timeCuts(int fibreNumber){
 double trialFunction(int fibreNumber, int LCN,double RAV){
     led = GetLEDInfoFromFibreNr(fibreNumber,0);
     PMTPos =  TVector3(pmts.x_pos[LCN],pmts.y_pos[LCN],pmts.z_pos[LCN]);
-    LEDPos = led.position;
-    TVector3 norm = (PMTPos+LEDPos);
+    
+    /*TVector3 norm = (PMTPos+LEDPos);
     norm.SetMag(1.0);
     double calcTime = ((RAV*norm)-LEDPos).Mag()+(PMTPos-(RAV*norm)).Mag();
+    
     //cout <<" Distance Travelled "<<calcTime<<endl;
     calcTime = calcTime/vg;
+    */
+    lp.SetAVRadius(RAV);
+    double energy = 0.00000243658;
+    double localityVal = 20;
+    lp.CalcByPosition(led.position, PMTPos, energy, localityVal);
+    double distInWater = lp.GetDistInWater();
+    double distInScint = lp.GetDistInScint();
+    double distInAV = lp.GetDistInAV();
+    double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
     //cout << "calcTime: "<<calcTime<< " Fibre number: "<<fibreNumber<<" PMT LCN: "<<LCN<<endl;
-    return calcTime;
+    return timeOfFlight;
 };
 
 
