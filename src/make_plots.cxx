@@ -22,8 +22,8 @@ using namespace std;
 
 int main(int argc,char **argv)
 {
-  TBenchmark benchmark;
-  benchmark.Start("MAKEPLOTS");
+  //TBenchmark benchmark;
+  //benchmark.Start("MAKEPLOTS");
   string ntuple_filename;
   string plot_filename;
   double distance;
@@ -79,13 +79,16 @@ int main(int argc,char **argv)
     return 0;
   }
   TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,500.,1);
-  //time_histograms(ntuple,distance,fibre_nr,sub_nr);
+  time_histograms(ntuple,distance,fibre_nr,sub_nr);
   plot_offset(ntuple,distance,fibre_nr,sub_nr);
+  TH1D * histo = plotAverageHitOffset(ntuple,distance);
+  cout << "Returned Histo"<<endl;
+  //histo->Write();
   hflatmap->Write();
   plot_file->Close();
   
-  benchmark.Stop("MAKEPLOTS");
-  benchmark.Show("MAKEPLOTS");
+  //benchmark.Stop("MAKEPLOTS");
+  //benchmark.Show("MAKEPLOTS");
   return 0;
 }
 

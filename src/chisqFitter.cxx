@@ -39,7 +39,7 @@ int numPMTS;
 vector<double> fibreNumbers;
 //fibreNumber iterator
 int fibreNum;
-double trialFunction(int,int ,double);
+double trialFunction(int,int,double);
 void timeCuts(int);
 
 
@@ -131,15 +131,16 @@ int main(){
         cout << "Completed Time cuts" << endl;
         TMinuit min(1);
         min.SetFCN(funcn);
-        min.SetErrorDef(0.5);
+        min.SetErrorDef(4);
         min.SetPrintLevel(1);
         string fibreNum;
         ss << fibreNumbers[i];
         ss >> fibreNum;
         ss.clear();
         string fibreRad = "fibre "+fibreNum;
+        string fibreRadOffset = fibreRad+" Offset";
         cout << fibreRad <<endl;
-        min.DefineParameter(0,fibreRad.c_str(),6000,50,5500,6500);
+        min.DefineParameter(0,fibreRadOffset.c_str(),0,50,200,-200);
         min.Migrad();
         free(numHits);
         free(hitTimes);
@@ -244,7 +245,7 @@ void timeCuts(int fibreNumber){
 
 };
 
-double trialFunction(int fibreNumber, int LCN,double RAV){
+double trialFunction(int fibreNumber, int LCN,double AVOffset ){
     led = GetLEDInfoFromFibreNr(fibreNumber,0);
     PMTPos =  TVector3(pmts.x_pos[LCN],pmts.y_pos[LCN],pmts.z_pos[LCN]);
     
@@ -255,7 +256,7 @@ double trialFunction(int fibreNumber, int LCN,double RAV){
     //cout <<" Distance Travelled "<<calcTime<<endl;
     calcTime = calcTime/vg;
     */
-    lp.SetAVRadius(RAV);
+    lp.SetAVOffset(AVOffset);
     double energy = 0.00000243658;
     double localityVal = 20;
     lp.CalcByPosition(led.position, PMTPos, energy, localityVal);

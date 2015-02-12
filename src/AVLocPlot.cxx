@@ -355,15 +355,19 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     // save histograms to file (needs to open!)
     TH1D * time_summary = new TH1D("time_summary","average hit time for each PMT",
             10001,-0.5,10000.5);
+    TH1D * time_summary_offset  = new TH1D("time_summary_fucntionOfDistance","average hit time offset with Distance",
+            100,0.0,2500);
     char title[128];
     sprintf(title,"time distribution for reflections, fibre %i-%i",fibre_nr,sub_nr);
     TH1D * time_histo = new TH1D("time_histo",title, 101,-10.05,10.05);
     time_summary->SetXTitle("LCN");
     time_summary->SetYTitle("hit_time (ns)");
+    time_summary_offset->SetXTitle("Distance (mm)");
+    time_summary_offset->SetYTitle("Hit Time (ns)");
     for (unsigned int i = 0 ; i < 10000 ; ++i ) {
         if (histo_map[i] != NULL ) {
             // if at least 30 entries, calculate mean and rms
-            if (histo_map[i]->GetEntries() > 200 ) {
+            if (histo_map[i]->GetEntries() > 30) {
                 histo_map[i]->Fit("gaus");
                 histo_map[i]->Write();
                 distanceInAV[i]->Write();
@@ -373,6 +377,13 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 assert(f);
                 double mu = f->GetParameter(1);
                 double si = f->GetParameter(2);
+                TVector3 PMT_pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
+                double distance = (PMT_pos-led.position).Mag();
+                //converting distance to bins 2500mm dist cut and 100 bins
+                int binNumber = (int )(100*distance/2500);
+                printf("bin Number %d\n",binNumber);
+                time_summary_offset->SetBinContent(binNumber,mu);
+                time_summary_offset->SetBinError(binNumber,si);
                 time_summary->SetBinContent(i+1,mu);
                 time_summary->SetBinError  (i+1,si);
                 time_histo->Fill(mu,1./(si*si));
@@ -380,8 +391,90 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
         }
     }
     time_summary->Write();
+    time_summary_offset->Write();
     time_histo->Fit("gaus");
     time_histo->SetXTitle("ns");
     time_histo->Write();
 
+}
+
+//Method to iterate over all the fibres in the NTuple get hit histograms for distance bins and fit these to guassians drawing a histogram with mean offset and error
+TH1D * plotAverageHitOffset(TNtuple * ntuple, double distance){
+    unsigned int nBins = 100;
+    TH1D * distanceMap[nBins];
+    PMTInfo pmt_info = GetPMTpositions();
+    //cout << "Getting Group Velocity"<<endl;
+    RAT::DU::GroupVelocity  gv = RAT::DU::Utility::Get()->GetGroupVelocity();
+    //cout << "Getting LightPath Calculator"<<endl;
+    RAT::DU::LightPathCalculator lp = RAT::DU::Utility::Get()->GetLightPathCalculator();
+    lp.SetELLIEReflect(true);
+    // effective refractive index:
+    // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
+    // Loop over ntuple
+    cout << "Setting distance maps up" << endl;
+    for (unsigned int i = 0 ; i < nBins ; ++i ) distanceMap[i] = NULL;
+    unsigned int nev = ntuple->GetEntries();
+    for (unsigned int i = 0 ; i < nev ; ++i){
+        //cout << "Got entry: "<<i<<endl;
+        ntuple->GetEntry(i);
+        double dist = (double)ntuple->GetArgs()[4]; 
+        int    lcn    = (int)ntuple->GetArgs()[2];
+        double time   = (double)ntuple->GetArgs()[3]; 
+        int    fibre  = (int)ntuple->GetArgs()[0];
+        int sub = (int) ntuple->GetArgs()[1];
+        //Getting bin number from distance 
+        int binNum = (int)((dist*100)/distance);
+        if ( distanceMap[binNum] == NULL ){
+            //cout << "Setting up histo"<<endl;
+            char name[128];
+            char nameAV[128];
+            char nameWater[128];
+            char nameScint[128];
+            sprintf(name,"binNum %d",binNum);
+            distanceMap[binNum] = new TH1D(name,name,50,-10,10);
+            distanceMap[binNum]->SetXTitle("offset (ns)");
+        }
+        if(time > 0. && time < 50. && dist < distance  ){
+            //cout << "Getting pmt Position"<<endl;
+            TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
+            //cout << "Getting fibbre information" <<endl;
+            LEDInfo   led    = GetLEDInfoFromFibreNr(fibre, sub);
+            //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
+            TVector3 hypPMTPos(0,0,0);
+            double lambda = 508;
+            double localityVal = 20.0;
+            double energy = 0.00000243658;
+            //cout << "Calculating by distance"<<endl;
+            lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
+            double distInWater = lp.GetDistInWater();
+            double distInScint = lp.GetDistInScint();
+            double distInAV = lp.GetDistInAV();
+            //cout << "Calculating Time of Flight bin Num: "<<binNum<<endl;
+            double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+            distanceMap[binNum]->Fill(time-timeOfFlight);
+        }
+    }
+    cout << "Finished getting entries now doing average histogram"<<endl;
+    TH1D * time_summary_offset  = new TH1D("time_summary_Average","average hit time offset with Distance all Fibres",
+            100,0.0,2500);
+    for (unsigned int i = 0 ; i < nBins ; ++i ) {
+        if (distanceMap[i] != NULL ) {
+            // if at least 30 entries, calculate mean and rms
+            if (distanceMap[i]->GetEntries() > 30) {
+                distanceMap[i]->Fit("gaus");
+                TF1 * f = distanceMap[i]->GetFunction("gaus");
+                assert(f);
+                double mu = f->GetParameter(1);
+                double si = f->GetParameter(2);
+                cout << "Setting bin error and values "<<i<<"   mu   "<<mu<<" si  "<<si<<endl;
+                time_summary_offset->SetBinContent(i+1,mu);
+                time_summary_offset->SetBinError(i+1,si);
+
+            }	
+        }
+    }
+    for(unsigned int i=0; i<nBins; i++){
+        delete distanceMap[i];
+    }
+    return time_summary_offset;
 }
