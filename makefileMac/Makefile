@@ -39,7 +39,7 @@ AVLOCLIB     =  lib/libAVLoc.$(DllSuf)
 #-----------------------------------------------------------------------------
 # libraries to be included
 #-----------------------------------------------------------------------------
-ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Darwin 
+ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Darwin
 NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 #-----------------------------------------------------------------------------
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)

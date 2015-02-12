@@ -4,18 +4,19 @@
 //
 #ifndef __AVLOCTOOLS_H__
 #define __AVLOCTOOLS_H__
-
+using namespace std;
 #include <string>
 #include <TH1D.h>
 #include <TNtuple.h>
 #include <TTree.h>
 #include <TVector3.h>
 #include <RAT/DB.hh>
-#include <RAT/DS/Root.hh>
+#include <RAT/DS/Entry.hh>
+#include <TGraph.h>
 #include <RAT/DS/Run.hh>
 
 // function to load a root file
-void LoadRootFile(string filename, TTree **tree, RAT::DS::Root **rDS, RAT::DS::Run **rRun);
+void LoadRootFile(string filename, TTree **tree, RAT::DS::Entry **rDS, RAT::DS::Run **rRun);
 
 // function to load the RAT database
 void LoadDataBase(string logname);
@@ -45,7 +46,7 @@ LEDInfo GetLEDInfoFromFibreNr(int fibre_nr, int subnr); // subnr: 0 for A fibre 
 LEDInfo GetLEDInfoFromFibreName(string fibre_name);
 
 // function to gain access to a (re)writable ntuple for summary data for avloc
-TNtuple * GetNtuple(TFile ** fpointer);
+TNtuple * GetNtuple(TFile ** fpointer, TString filename);
 
 struct PhysicsNr {
   double value;
@@ -53,7 +54,7 @@ struct PhysicsNr {
 };
 
 // function to convert LED spectrum convoluted with the group velocity in water into an average and an error
-PhysicsNr GroupVelocity(string fibre_name, TGraph * water_group_velocity);
+PhysicsNr GroupVelocity(string fibre_name);
 
 // Calculate time of flight in ns
 PhysicsNr TimeOfFlight(TVector3 inject, TVector3 detect, PhysicsNr n_h2o, double offset);

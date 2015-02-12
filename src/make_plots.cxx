@@ -10,8 +10,9 @@
 #include <TNtuple.h>
 
 #include <RAT/DB.hh>
-#include <RAT/DS/Root.hh>
+#include <RAT/DS/Entry.hh>
 #include <RAT/DS/Run.hh>
+#include <RAT/DU/Utility.hh>
 
 #include "include/AVLocTools.h"
 #include "include/AVLocProc.h"
@@ -21,8 +22,8 @@ using namespace std;
 
 int main(int argc,char **argv)
 {
-  TBenchmark benchmark;
-  benchmark.Start("MAKEPLOTS");
+  //TBenchmark benchmark;
+  //benchmark.Start("MAKEPLOTS");
   string ntuple_filename;
   string plot_filename;
   double distance;
@@ -40,6 +41,29 @@ int main(int argc,char **argv)
     sub_nr          = atoi(argv[5]);
   }
   LoadDataBase("make_plots.log");
+  char* ratroot = getenv("RATROOT");
+  if (ratroot == static_cast<char*>(NULL)) {
+    cerr << "Environment variable $RATROOT must be set" << endl;
+    assert(ratroot);
+  }
+  string rat     = string(ratroot);
+  string pmtfile = rat;
+  pmtfile += "/data/pmt/snoman.ratdb";
+  RAT::DB * db = RAT::DB::Get();
+  assert(db);
+  db->LoadFile(pmtfile);
+  RAT::DBLinkPtr pmtInfo = db->GetLink("PMTINFO");
+  assert(pmtInfo);
+  PMTInfo pmt_info;
+  pmt_info.x_pos = pmtInfo->GetDArray("x");
+  pmt_info.y_pos = pmtInfo->GetDArray("y");
+  pmt_info.z_pos = pmtInfo->GetDArray("z");
+  string geofile = rat;
+  geofile += "/data/geo/snoplus_water.geo";
+  db->Load(geofile);
+  //RAT::DB::Get()->LoadDefaults();
+  db->Load(pmtfile);
+  RAT::DU::Utility::Get()->BeginOfRun();
   
   TFile * ntuple_file = new TFile(ntuple_filename.data(),"READ");
   if ( !ntuple_file->IsOpen() ) {
@@ -55,13 +79,16 @@ int main(int argc,char **argv)
     return 0;
   }
   TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,500.,1);
-  //time_histograms(ntuple,distance,fibre_nr,sub_nr);
+  time_histograms(ntuple,distance,fibre_nr,sub_nr);
   plot_offset(ntuple,distance,fibre_nr,sub_nr);
+  TH1D * histo = plotAverageHitOffset(ntuple,distance);
+  cout << "Returned Histo"<<endl;
+  //histo->Write();
   hflatmap->Write();
   plot_file->Close();
   
-  benchmark.Stop("MAKEPLOTS");
-  benchmark.Show("MAKEPLOTS");
+  //benchmark.Stop("MAKEPLOTS");
+  //benchmark.Show("MAKEPLOTS");
   return 0;
 }
 

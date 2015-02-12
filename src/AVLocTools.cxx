@@ -3,23 +3,27 @@
 // S.J.M.Peeters@sussex.ac.uk, June 2014
 //
 #include <assert.h>
+#include <iostream>
 
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TTree.h>
+#include <TROOT.h>
 #include <TSystem.h>
 #include <RAT/Log.hh>
+#include <RAT/DU/Utility.hh>
+#include <RAT/DU/GroupVelocity.hh>
+#include <RAT/DB.hh>
 
 #include "include/AVLocTools.h"
-
 // function to load a root file
-void LoadRootFile(string filename, TTree **tree, RAT::DS::Root **rDS, RAT::DS::Run **rRun)
+void LoadRootFile(string filename, TTree **tree, RAT::DS::Entry **rDS, RAT::DS::Run **rRun)
 {
   TFile *file = new TFile(filename.data());
   (*tree) = (TTree*)file->Get( "T" );
   TTree *runTree = (TTree*)file->Get("runT");
   assert(runTree);
-  *rDS = new RAT::DS::Root();
+  *rDS = new RAT::DS::Entry();
   (*tree)->SetBranchAddress( "ds", &(*rDS) );
   assert(rDS);
   *rRun = new RAT::DS::Run();
@@ -45,23 +49,37 @@ void LoadDataBase(string logname)
 }
 
 PMTInfo GetPMTpositions(void) {
-  const double offset = 56.7; // difference front PMT and bucket in mm
+  cout << "Loading PMT positions" << endl;
+  //const double offset = 56.7; // difference front PMT and bucket in mm
+  const double offset = 113.3;
   RAT::DB* db = RAT::DB::Get();
   assert(db);
+  char* ratroot = getenv("RATROOT");
+  if (ratroot == static_cast<char*>(NULL)) {
+      cerr << "Environment variable $RATROOT must be set" << endl;
+      assert(ratroot);
+  }
+  string rat     = string(ratroot);
+    string pmtfile = rat;
+  pmtfile += "/data/pmt/snoman.ratdb";
+  db->LoadFile(pmtfile);
   RAT::DBLinkPtr pmtInfo = db->GetLink("PMTINFO");
   assert(pmtInfo);
   PMTInfo pmt_info;
+  cout << "Getting Arrays" << endl;
   pmt_info.x_pos = pmtInfo->GetDArray("x");
   pmt_info.y_pos = pmtInfo->GetDArray("y");
   pmt_info.z_pos = pmtInfo->GetDArray("z");
+  cout << "Got Position arrays" << endl;
   vector<double> xDir = pmtInfo->GetDArray("v");
   vector<double> yDir = pmtInfo->GetDArray("u");
   vector<double> zDir = pmtInfo->GetDArray("w");
+  cout << "Obtained ARRAYS" << endl;
   for ( unsigned int i = 0 ; i < xDir.size() ; ++i ) {
     TVector3 pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
     TVector3 dir(xDir[i],yDir[i],zDir[i]);
     cerr << pos.Mag() << " -> "; 
-    pos -= dir.Unit()*offset;
+    pos += dir.Unit()*offset;
     pmt_info.x_pos[i] = pos.X();
     pmt_info.y_pos[i] = pos.Y();
     pmt_info.z_pos[i] = pos.Z();
@@ -74,7 +92,9 @@ PMTInfo GetPMTpositions(void) {
 LEDInfo GetLEDInfoFromFileName(string filename)
 { 
   string shortname  = filename.substr(filename.find_last_of('/')+1);
-  string fibre_name = shortname.substr(4, 6);
+  std::cout << "shortname " << shortname << std::endl;
+  string fibre_name = shortname.substr(6, 6);
+  std::cout << "fibrename " << fibre_name << std::endl;
   return GetLEDInfoFromFibreName(fibre_name);
 }
 
@@ -98,9 +118,11 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
   led_info.name = fibre_name;
   
   // get number
+  //std::cout << led_info.name << std::endl;
   string nr = led_info.name.substr(2,3);
   led_info.nr = atoi(nr.data());
   char letter = led_info.name[5];
+  //std::cout << letter << std::endl;
   if      ( letter == 'A' ) { led_info.sub = 0; }
   else if ( letter == 'B' ) { led_info.sub = 1; }
   else { cerr << "Unknown sub fibre: " << letter << " in " << led_info.name << endl; }
@@ -125,13 +147,20 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
   assert ( max > min );
   assert ( nbins != 0 );
   double bw  = (max-min)/(float)nbins;
-  led_info.spectrum = new TH1D("hLEDData",title,nbins,min-0.5*bw,max+0.5*bw);
+  try{
+      delete gROOT->FindObject("hLEDData");
+      led_info.spectrum = new TH1D("hLEDData",title,nbins,min-0.5*bw,max+0.5*bw);
+  }
+  catch(int e){
+      led_info.spectrum = new TH1D("hLEDData",title,nbins,min-0.5*bw,max+0.5*bw);
+  }
   led_info.spectrum->SetXTitle("wavelength (nm)");
   for (unsigned int i = 0 ; i < wl.size() ; ++i) {
     led_info.spectrum->SetBinContent(i+1,amp[i]);
   }
 
   // report 
+  /*
   cout << "LED: " << led_info.name;
   cout << " (" << led_info.nr << " - " << led_info.sub  << ") @ (";
   cout << led_info.position.X() << ",";
@@ -139,6 +168,7 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
   cout << led_info.position.Z() << ")";
   cout << "; wavelength is (" << led_info.spectrum->GetMean() << " +/- ";
   cout << led_info.spectrum->GetRMS() << " nm)" << endl;
+  */
 
   return led_info;
 }
@@ -150,18 +180,23 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
 // 2 - lcn       : logical channel number for the PMT
 // 3 - time      : hit time (ns)
 // 4 - dist      : distance from fibre (mm)
-TNtuple * GetNtuple(TFile ** fpointer)
+TNtuple * GetNtuple(TFile ** fpointer,TString outputFile)
 {
   TNtuple * ntuple = NULL;
-  TString filename = "summary_ntuple.root";
-  if ( gSystem->FindFile("/home/sjp39/snoplus/avloc/data",filename) == 0 ) {
+  TString filename = "summary_ntuple";
+  filename+=outputFile;
+  filename+=".root";
+  TString filenameTest;
+  filenameTest = filename;
+  if ( gSystem->FindFile("./",filenameTest) == 0 ) {
+      cout << "Filename is: "<<filename<<endl;
     cout << "CREATING NEW FILE " << filename << endl;
-    (*fpointer) = new TFile("/home/sjp39/snoplus/avloc/data/summary_ntuple.root","NEW");
+    (*fpointer) = new TFile(filename,"NEW");
     ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist");
   }
   else {
     cout << "REUSING OLD FILE " << filename << endl;
-    (*fpointer) = new TFile("/home/sjp39/snoplus/avloc/data/summary_ntuple.root","UPDATE");
+    (*fpointer) = new TFile(filename,"UPDATE");
     ntuple = (TNtuple*)(*fpointer)->Get("avloctuple");
     assert(ntuple);
   }
@@ -195,16 +230,26 @@ double get_value(TGraph * g, double x)
 // into an average and an error
 // for the weighted average calculation in one loop, see:
 // http://en.wikipedia.org/wiki/Mean_square_weighted_deviation
-PhysicsNr GroupVelocity(string fibre_name, TGraph * water_group_velocity) 
+PhysicsNr GroupVelocity(string fibre_name) 
 {
   LEDInfo   led_info = GetLEDInfoFromFibreName(fibre_name);
   int nbins  = led_info.spectrum->GetNbinsX();
   double sumw  = 0.; // sum_i (w_i)
   double sum   = 0.; // sum_i (w_i * x_i)
   double sumsq = 0.; // sum_i (w_i * x_i^2)
-  for ( int i=1 ; i <= nbins ; ++i ) {
+  //Unsure of of 10^-4 scaling factor  required for calc by distance method as 400nm->3.103125 * 1e-6 units of energy
+  double hc = 0.197*6.28318530718*10e-4;
+  //const double f = h/e*c*1E-6*1E9; //  eV*nm = 1E-6 MeV * 1E9 nm
+  //const RAT::DU::GroupVelocity& vel =  RAT::DU::Utility::Get()->GetGroupVelocity();
+  for ( int i=1 ; i <= nbins ; ++i ){
     double wi = led_info.spectrum->GetBinContent(i);
-    double xi = get_value(water_group_velocity,led_info.spectrum->GetBinCenter(i));
+    double energy = hc/led_info.spectrum->GetBinCenter(i);
+    //printf("wavlength:%f energy:%f\n", led_info.spectrum->GetBinCenter(i),energy);
+    //cout << "energy: "<< energy << endl;
+    const double time = RAT::DU::Utility::Get()->GetGroupVelocity().CalcByDistance(0.0,0.0,1.0,energy);
+    //cout.precision(15);
+    //cout << "time: " << time << endl;
+    double xi = 1.0/time;
     sumw  += wi;
     sum   += wi*xi;
     sumsq += wi*xi*xi;
@@ -232,4 +277,6 @@ PhysicsNr TimeOfFlight(TVector3 inject, TVector3 detect, PhysicsNr n_h2o, double
   tof.error = ev/vv*tof.value;
   return tof;	
 }
+
+
 
