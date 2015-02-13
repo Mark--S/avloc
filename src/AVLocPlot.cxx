@@ -15,6 +15,7 @@
 #include <TF1.h>
 #include <TFile.h>
 #include <TMath.h>
+#include <TH1D.h>
 
 #include <map>
 
@@ -370,9 +371,6 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
             if (histo_map[i]->GetEntries() > 30) {
                 histo_map[i]->Fit("gaus");
                 histo_map[i]->Write();
-                distanceInAV[i]->Write();
-                distanceInWater[i]->Write();
-                distanceInScint[i]->Write();
                 TF1 * f = histo_map[i]->GetFunction("gaus");
                 assert(f);
                 double mu = f->GetParameter(1);
@@ -390,6 +388,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
             }	
         }
     }
+    cout << "Writing out offset histograms" << endl;
     time_summary->Write();
     time_summary_offset->Write();
     time_histo->Fit("gaus");
@@ -399,7 +398,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
 }
 
 //Method to iterate over all the fibres in the NTuple get hit histograms for distance bins and fit these to guassians drawing a histogram with mean offset and error
-TH1D * plotAverageHitOffset(TNtuple * ntuple, double distance){
+void plotAverageHitOffset(TNtuple * ntuple, double distance){
     unsigned int nBins = 100;
     TH1D * distanceMap[nBins];
     PMTInfo pmt_info = GetPMTpositions();
@@ -455,26 +454,28 @@ TH1D * plotAverageHitOffset(TNtuple * ntuple, double distance){
         }
     }
     cout << "Finished getting entries now doing average histogram"<<endl;
-    TH1D * time_summary_offset  = new TH1D("time_summary_Average","average hit time offset with Distance all Fibres",
+    TH1D  time_summary_offset_Average  = TH1D("hitTimeAsFunctionOfDistanceforAllFibres","average hit time offset with Distance all Fibres",
             100,0.0,2500);
+    time_summary_offset_Average.SetXTitle("Distance from fibre (mm)");
+    time_summary_offset_Average.SetYTitle("Hit Time (ns)");
+    cout << "Set up histogram"<<endl;
     for (unsigned int i = 0 ; i < nBins ; ++i ) {
         if (distanceMap[i] != NULL ) {
             // if at least 30 entries, calculate mean and rms
             if (distanceMap[i]->GetEntries() > 30) {
+                cout << "Fitting histogram"<<endl;
                 distanceMap[i]->Fit("gaus");
                 TF1 * f = distanceMap[i]->GetFunction("gaus");
                 assert(f);
                 double mu = f->GetParameter(1);
                 double si = f->GetParameter(2);
                 cout << "Setting bin error and values "<<i<<"   mu   "<<mu<<" si  "<<si<<endl;
-                time_summary_offset->SetBinContent(i+1,mu);
-                time_summary_offset->SetBinError(i+1,si);
-
+                time_summary_offset_Average.SetBinContent(i+1,mu);
+                time_summary_offset_Average.SetBinError(i+1,si);
             }	
         }
     }
-    for(unsigned int i=0; i<nBins; i++){
-        delete distanceMap[i];
-    }
-    return time_summary_offset;
+    cout << "Writing out histogram"<<endl;
+    //time_summary_offset_Average->SetDirectory(gDirectory->pwd());
+    time_summary_offset_Average.Write();
 }

@@ -78,12 +78,12 @@ PMTInfo GetPMTpositions(void) {
   for ( unsigned int i = 0 ; i < xDir.size() ; ++i ) {
     TVector3 pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
     TVector3 dir(xDir[i],yDir[i],zDir[i]);
-    cerr << pos.Mag() << " -> "; 
+    //cerr << pos.Mag() << " -> "; 
     pos += dir.Unit()*offset;
     pmt_info.x_pos[i] = pos.X();
     pmt_info.y_pos[i] = pos.Y();
     pmt_info.z_pos[i] = pos.Z();
-    cerr << pos.Mag() << endl;
+    //cerr << pos.Mag() << endl;
   }
   return pmt_info;
 } 
