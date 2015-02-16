@@ -79,13 +79,12 @@ int main(int argc,char **argv)
     return 0;
   }
   TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,500.,1);
-  time_histograms(ntuple,distance,fibre_nr,sub_nr);
+  //time_histograms(ntuple,distance,fibre_nr,sub_nr);
   plot_offset(ntuple,distance,fibre_nr,sub_nr);
-  TH1D * histo = plotAverageHitOffset(ntuple,distance);
-  cout << "Returned Histo"<<endl;
-  //histo->Write();
-  hflatmap->Write();
+  plotAverageHitOffset(ntuple,distance);
+  cout << "Made Histograms"<<endl;
   plot_file->Close();
+  cout << "Closed the file"<<endl;
   
   //benchmark.Stop("MAKEPLOTS");
   //benchmark.Show("MAKEPLOTS");

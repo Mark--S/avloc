@@ -57,5 +57,5 @@ void time_histograms(TNtuple * ntuple, double distance = 100000., int fibre_nr =
 // distance: max PMT distance to be considered (mm)
 // fibre_nr: fibre nr to analyse 
 void plot_offset(TNtuple * ntuple, double distance = 5000., int fibre_nr = 44, int sub_nr = 0);
-TH1D * plotAverageHitOffset(TNtuple * ntuple, double distance);
+void plotAverageHitOffset(TNtuple * ntuple, double distance);
 #endif
