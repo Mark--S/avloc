@@ -294,6 +294,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     lp.SetELLIEReflect(true);
     // effective refractive index:
     // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
+    cout << "Set up Light Path Calculator"<<endl;
     PhysicsNr n_h2o; 
     n_h2o.value = 1.3637; 
     n_h2o.error = 0.0021;
@@ -408,11 +409,12 @@ TH1D * plotAverageHitOffset(TNtuple * ntuple, double distance){
     //cout << "Getting LightPath Calculator"<<endl;
     RAT::DU::LightPathCalculator lp = RAT::DU::Utility::Get()->GetLightPathCalculator();
     lp.SetELLIEReflect(true);
+    cout << "Set up light path calculator"<<endl;
     // effective refractive index:
     // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
     // Loop over ntuple
     cout << "Setting distance maps up" << endl;
-    for (unsigned int i = 0 ; i < nBins ; ++i ) distanceMap[i] = NULL;
+    for (unsigned int i = 0 ; i < nBins ; ++i ) distanceMap[i] = 0;
     unsigned int nev = ntuple->GetEntries();
     for (unsigned int i = 0 ; i < nev ; ++i){
         //cout << "Got entry: "<<i<<endl;
@@ -423,9 +425,9 @@ TH1D * plotAverageHitOffset(TNtuple * ntuple, double distance){
         int    fibre  = (int)ntuple->GetArgs()[0];
         int sub = (int) ntuple->GetArgs()[1];
         //Getting bin number from distance 
-        int binNum = (int)((dist*100)/distance);
-        if ( distanceMap[binNum] == NULL ){
-            //cout << "Setting up histo"<<endl;
+        int binNum = (int)((dist)/distance)*100;
+        if ( distanceMap[binNum]==0 ){
+            cout << "Setting up histo for bin number %d"<<binNum<<endl;
             char name[128];
             char nameAV[128];
             char nameWater[128];
