@@ -34,7 +34,7 @@
 
 
 # Set the number of photons per beam
-/rat/db/set ELLIE intensity 100000
+/rat/db/set ELLIE intensity 10000
 /rat/db/set ELLIE fibre_id "${Number}"
 /rat/db/set ELLIE wavelength_dist "TELLIE503"
 /rat/db/set ELLIE time_dist "TELLIE503"
