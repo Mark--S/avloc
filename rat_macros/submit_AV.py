@@ -13,13 +13,13 @@ disps = [0.0]
 
 for fibre in fibres:
 	for disp in disps:
-		macro = template_macro.substitute(Disp = disp, Number = fibre, Events = 1000)
+		macro = template_macro.substitute(Disp = disp, Number = fibre, Events = 5000)
 		filename = os.path.join(scratch, "macros", "%.1d_Fibre_%s.mac" % (disp,fibre))
 		fout = file(filename, "w")
 		fout.write(macro)
 		fout.close()
     
-		for i in range(1,11):
+		for i in range(1,21):
         
 			rootname = os.path.join(scratch, "outputs", "Fibre_%s_%.1d_%d" % (fibre, disp,  i))
 			logname = os.path.join(scratch, "RATlogs", "Fibre_%s_%.1d_%d.log" % (fibre, disp, i))

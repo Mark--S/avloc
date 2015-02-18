@@ -1,9 +1,9 @@
 ########
 
-/PhysicsList/Optical/OmitAttenuation true
+/rat/physics_list/Optical/OmitAttenuation true
 
-/PhysicsList/OmitMuonicProcesses true
-/PhysicsList/OmitHadronicProcesses true
+/rat/physics_list/OmitMuonicProcesses true
+/rat/physics_list/OmitHadronicProcesses true
 
 # To use simulated external asynch trigger
 /rat/db/set DAQ trigger_mask 32768
