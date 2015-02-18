@@ -296,6 +296,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     lp.SetELLIEReflect(true);
     // effective refractive index:
     // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
+    cout << "Set up Light Path Calculator"<<endl;
     PhysicsNr n_h2o; 
     n_h2o.value = 1.3637; 
     n_h2o.error = 0.0021;
@@ -409,12 +410,12 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
     //cout << "Getting LightPath Calculator"<<endl;
     RAT::DU::LightPathCalculator lp = RAT::DU::Utility::Get()->GetLightPathCalculator();
     lp.SetELLIEReflect(true);
+    cout << "Set up light path calculator"<<endl;
     // effective refractive index:
     // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
     // Loop over ntuple
     cout << "Setting distance maps up" << endl;
-    for (unsigned int i = 0 ; i < nBins ; ++i ) distanceMap[i] = NULL;
-    cout << "Done" << endl;
+    for (unsigned int i = 0 ; i < nBins ; ++i ) distanceMap[i] = 0;
     unsigned int nev = ntuple->GetEntries();
     //cout << nev << endl;
     for (unsigned int i = 0 ; i < nev ; ++i){
