@@ -100,7 +100,7 @@ int main(int argc,char **argv)
   
   for( int iEvent = 0; iEvent < tree->GetEntries() ; ++iEvent) {
     tree->GetEntry(iEvent);
-    if ( !ProcessEventNtuple(rDS,ntuple,led_info,pmt_info) ) return 1; 
+    if ( !ProcessEventNtupleMC(rDS,ntuple,led_info,pmt_info) ) return 1; 
   }
 
   ntuple->Write();
