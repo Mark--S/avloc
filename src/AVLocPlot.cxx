@@ -16,6 +16,7 @@
 #include <TFile.h>
 #include <TMath.h>
 #include <TH1D.h>
+#include <TCanvas.h>
 
 #include <map>
 
@@ -420,6 +421,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
 
 //Method to iterate over all the fibres in the NTuple get hit histograms for distance bins and fit these to guassians drawing a histogram with mean offset and error
 void plotAverageHitOffset(TNtuple * ntuple, double distance){
+    RAT::DU::Utility::Get()->BeginOfRun();
     unsigned int nBins = 100;
     TH1D * distanceMap[nBins];
     PMTInfo pmt_info = GetPMTpositions();
@@ -435,27 +437,28 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
     cout << "Setting distance maps up" << endl;
     for (unsigned int i = 0 ; i < nBins ; ++i ) distanceMap[i] = 0;
     unsigned int nev = ntuple->GetEntries();
+    //cout << nev << endl;
     for (unsigned int i = 0 ; i < nev ; ++i){
-        //cout << "Got entry: "<<i<<endl;
+        //if (i%1000 == 0 ) cout << "Got entry: "<<i<<endl;
         ntuple->GetEntry(i);
         double dist = (double)ntuple->GetArgs()[4]; 
         int    lcn    = (int)ntuple->GetArgs()[2];
         double time   = (double)ntuple->GetArgs()[3]; 
-        int    fibre  = (int)ntuple->GetArgs()[0];
-        int sub = (int) ntuple->GetArgs()[1];
-        //Getting bin number from distance 
-        int binNum = (int)((dist)/distance)*100;
-        if ( distanceMap[binNum]==0 ){
-            cout << "Setting up histo for bin number %d"<<binNum<<endl;
-            char name[128];
-            char nameAV[128];
-            char nameWater[128];
-            char nameScint[128];
-            sprintf(name,"binNum %d",binNum);
-            distanceMap[binNum] = new TH1D(name,name,50,-10,10);
-            distanceMap[binNum]->SetXTitle("offset (ns)");
-        }
         if(time > 0. && time < 50. && dist < distance  ){
+            int    fibre  = (int)ntuple->GetArgs()[0];
+            int sub = (int) ntuple->GetArgs()[1];
+            //Getting bin number from distance 
+            int binNum = (int)((dist/distance)*nBins);
+            if ( distanceMap[binNum] == NULL ){
+                //cout << "Setting up histo"<<endl;
+                char name[128];
+                char nameAV[128];
+                char nameWater[128];
+                char nameScint[128];
+                sprintf(name,"binNum %d",binNum);
+                distanceMap[binNum] = new TH1D(name,name,50,-10,10);
+                distanceMap[binNum]->SetXTitle("offset (ns)");
+            }
             //cout << "Getting pmt Position"<<endl;
             TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
             //cout << "Getting fibbre information" <<endl;
@@ -476,11 +479,11 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
         }
     }
     cout << "Finished getting entries now doing average histogram"<<endl;
-    TH1D  time_summary_offset_Average  = TH1D("hitTimeAsFunctionOfDistanceforAllFibres","average hit time offset with Distance all Fibres",
-            100,0.0,2500);
-    time_summary_offset_Average.SetXTitle("Distance from fibre (mm)");
-    time_summary_offset_Average.SetYTitle("Hit Time (ns)");
+    TH1D * time_summary_offset_Average = new TH1D("hitTimeAsFunctionOfDistanceforAllFibres","average hit time offset with Distance all Fibres",100,0.0,2500);
+    time_summary_offset_Average->SetXTitle("Distance from fibre (mm)");
+    time_summary_offset_Average->SetYTitle("Hit Time (ns)");
     cout << "Set up histogram"<<endl;
+    //time_summary_offset_Average->Print("ALL");
     for (unsigned int i = 0 ; i < nBins ; ++i ) {
         if (distanceMap[i] != NULL ) {
             // if at least 30 entries, calculate mean and rms
@@ -492,12 +495,13 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
                 double mu = f->GetParameter(1);
                 double si = f->GetParameter(2);
                 cout << "Setting bin error and values "<<i<<"   mu   "<<mu<<" si  "<<si<<endl;
-                time_summary_offset_Average.SetBinContent(i+1,mu);
-                time_summary_offset_Average.SetBinError(i+1,si);
+                time_summary_offset_Average->SetBinContent(i+1,mu);
+                time_summary_offset_Average->SetBinError(i+1,si);
             }	
         }
     }
+    //time_summary_offset_Average->Print("ALL");
     cout << "Writing out histogram"<<endl;
     //time_summary_offset_Average->SetDirectory(gDirectory->pwd());
-    time_summary_offset_Average.Write();
+    time_summary_offset_Average->Write();
 }

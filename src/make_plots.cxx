@@ -72,8 +72,9 @@ int main(int argc,char **argv)
   }
   TNtuple * ntuple = (TNtuple*)ntuple_file->Get("avloctuple");
   assert(ntuple);
-  
-  TFile * plot_file = new TFile(plot_filename.data(),"CREATE");
+  ntuple->Print();
+
+  TFile * plot_file = new TFile(plot_filename.data(),"RECREATE");
   if ( !plot_file->IsOpen() ) {
     cerr << "Could not open file " << plot_filename << endl;
     return 0;
@@ -83,6 +84,7 @@ int main(int argc,char **argv)
   plot_offset(ntuple,distance,fibre_nr,sub_nr);
   //plotAverageHitOffset(ntuple,distance);
   cout << "Made Histograms"<<endl;
+  hflatmap->Write();
   plot_file->Close();
   cout << "Closed the file"<<endl;
   

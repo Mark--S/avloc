@@ -51,7 +51,7 @@ void LoadDataBase(string logname)
 PMTInfo GetPMTpositions(void) {
   cout << "Loading PMT positions" << endl;
   //const double offset = 56.7; // difference front PMT and bucket in mm
-  const double offset = 113.3;
+  const double offset = 56.7;
   RAT::DB* db = RAT::DB::Get();
   assert(db);
   char* ratroot = getenv("RATROOT");
