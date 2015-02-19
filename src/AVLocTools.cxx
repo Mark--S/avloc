@@ -192,7 +192,7 @@ TNtuple * GetNtuple(TFile ** fpointer,TString outputFile)
       cout << "Filename is: "<<filename<<endl;
     cout << "CREATING NEW FILE " << filename << endl;
     (*fpointer) = new TFile(filename,"NEW");
-    ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist");
+    ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist:PECreationTime");
   }
   else {
     cout << "REUSING OLD FILE " << filename << endl;

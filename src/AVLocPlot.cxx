@@ -302,10 +302,12 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     n_h2o.error = 0.0021;
     // Loop over ntuple
     TH1I * histo_map[10000];
+    TH1I * histo_mapPE[10000];
     TH1D * distanceInAV[10000];
     TH1D * distanceInWater[10000];
     TH1D * distanceInScint[10000];
     for (unsigned int i = 0 ; i < 10000 ; ++i ) histo_map[i] = NULL;
+    for (unsigned int i = 0 ; i < 10000 ; ++i ) histo_mapPE[i] = NULL;
     for (unsigned int i = 0 ; i < 10000 ; ++i ) distanceInAV[i] = NULL;
     for (unsigned int i = 0 ; i < 10000 ; ++i ) distanceInWater[i] = NULL;
     for (unsigned int i = 0 ; i < 10000 ; ++i ) distanceInScint[i] = NULL;
@@ -314,27 +316,35 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
         ntuple->GetEntry(i);
         double dist = (double)ntuple->GetArgs()[4]; 
         if ( dist < distance ) {
+            cout << "GOt Entry "<<i<<endl;
             int    lcn    = (int)ntuple->GetArgs()[2];
             double time   = (double)ntuple->GetArgs()[3]; 
             int    fibre  = (int)ntuple->GetArgs()[0];
-            if ( histo_map[lcn] == NULL ) {
+            double peTime = (double)ntuple->GetArgs()[5];
+            cout << "Got Args"<<endl;
+            if ( histo_map[lcn] == NULL ){
                 char name[128];
+                char namePE[128];
                 char nameAV[128];
                 char nameWater[128];
                 char nameScint[128];
                 sprintf(name,"pmt%i",lcn);
+                sprintf(namePE,"pmtPE%i",lcn);
                 sprintf(nameAV,"dist in AV %i",lcn);
                 sprintf(nameWater,"dist in Water %i",lcn);
                 sprintf(nameScint,"dist in Scint  %i",lcn);
                 histo_map[lcn] = new TH1I(name,name,51,-25.5,25.5);
+                histo_mapPE[lcn] = new TH1I(namePE,namePE,51,-25.5,25.5);
                 distanceInAV[lcn] = new TH1D(nameAV,nameAV,50,-20,200);
                 distanceInWater[lcn] = new TH1D(nameWater,nameWater,500,20,8000);
                 distanceInScint[lcn] = new TH1D(nameScint,nameScint,50,-20,200);
                 histo_map[lcn]->SetXTitle("time (ns)");
+                histo_mapPE[lcn]->SetXTitle("time (ns)");
                 distanceInAV[lcn]->SetXTitle("distance (mm)");
                 distanceInScint[lcn]->SetXTitle("distance (mm)");
                 distanceInWater[lcn]->SetXTitle("distance (mm)");
             }
+            cout << "Set UP histo map" <<endl;
             if ( fibre == fibre_nr && time > 0. && time < 50. ) {
                 TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
                 //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
@@ -347,6 +357,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 double distInScint = lp.GetDistInScint();
                 double distInAV = lp.GetDistInAV();
                 double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+                histo_mapPE[lcn]->Fill(peTime-timeOfFlight);
                 histo_map[lcn]->Fill(time-timeOfFlight);
                 distanceInAV[lcn]->Fill(distInAV);
                 distanceInWater[lcn]->Fill(distInWater);
@@ -363,6 +374,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     char title[128];
     sprintf(title,"time distribution for reflections, fibre %i-%i",fibre_nr,sub_nr);
     TH1D * time_histo = new TH1D("time_histo",title, 101,-10.05,10.05);
+    TH1D * time_histo_PE = new TH1D("time_histo_PE",title, 101,-10.05,10.05);
     time_summary->SetXTitle("LCN");
     time_summary->SetYTitle("hit_time (ns)");
     time_summary_offset->SetXTitle("Distance (mm)");
@@ -372,11 +384,15 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
             // if at least 30 entries, calculate mean and rms
             if (histo_map[i]->GetEntries() > 30) {
                 histo_map[i]->Fit("gaus");
+                histo_mapPE[i]->Fit("gaus");
                 histo_map[i]->Write();
                 TF1 * f = histo_map[i]->GetFunction("gaus");
+                TF1 * fPE = histo_mapPE[i]->GetFunction("gaus");
                 assert(f);
                 double mu = f->GetParameter(1);
                 double si = f->GetParameter(2);
+                double muPE = fPE->GetParameter(1);
+                double siPE = fPE->GetParameter(2);
                 TVector3 PMT_pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
                 double distance = (PMT_pos-led.position).Mag();
                 //converting distance to bins 2500mm dist cut and 100 bins
@@ -387,6 +403,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 time_summary->SetBinContent(i+1,mu);
                 time_summary->SetBinError  (i+1,si);
                 time_histo->Fill(mu,1./(si*si));
+                time_histo_PE->Fill(muPE,1./(siPE*siPE));
             }	
         }
     }
@@ -394,8 +411,11 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     time_summary->Write();
     time_summary_offset->Write();
     time_histo->Fit("gaus");
+    time_histo_PE->Fit("gaus");
     time_histo->SetXTitle("ns");
+    time_histo_PE->SetXTitle("ns");
     time_histo->Write();
+    time_histo_PE->Write();
 
 }
 
