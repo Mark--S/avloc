@@ -16,7 +16,7 @@ using namespace std;
 int fibre_nr;
 int sub_nr;
 //Distance cut for the PMTS
-double distCut = 1000.;
+double distCut = 1500.;
 //PMT and LED info being loaded in from db
 LEDInfo led;     
 PMTInfo pmts;  
@@ -60,7 +60,7 @@ void funcn(Int_t & npar, Double_t * deriv, Double_t& f, Double_t * par, Int_t fl
     f = chisq;
 }
 
-int main(){
+int main(int argc, char ** argv){
     stringstream ss;
     //Obtaining the fibres and sub fibre we want to fire from
     LoadDataBase("fitter.log");    
@@ -87,11 +87,25 @@ int main(){
     lp.SetELLIEReflect(true);
     cout << "Obtained PMT positions "<< pmts.x_pos[1000] << endl;
     //Loading up root file
-    TFile * input = TFile::Open("totalNtupleBackend.root");
-    ntuple = (TNtuple*)input->Get("avloctuple");
+    string ntuple_filename = argv[1];
+    string plot_filename = argv[2];
+    TFile * ntuple_file = new TFile(ntuple_filename.data(),"READ");
+    if ( !ntuple_file->IsOpen() ) {
+        cerr << "Could not open file " << ntuple_filename << endl;
+        return 0;
+    }
+
+    TFile * plot_file = new TFile(plot_filename.data(),"RECREATE");
+    if ( !plot_file->IsOpen() ) {
+        cerr << "Could not open file " << plot_filename << endl;
+        return 0;
+    }
+   // Histogram to store fit values for offset and errors
+  TH1D * offsetAndErrors = new TH1D("offsetAndErrors","offsetAndErrors",100,0,100);
+  ntuple = (TNtuple*)ntuple_file->Get("avloctuple");
     //Obtaining the number of fibres
     cout << "Getting fibre Numbers" << endl;
-    TH1I * fibreHisto = new TH1I("fibreNr","fibreNr",100,0,100);
+    /*TH1I * fibreHisto = new TH1I("fibreNr","fibreNr",100,0,100);
     int events = ntuple->GetEntries();
     for(int i=0; i<events; i++){
         ntuple->GetEntry(i);
@@ -103,7 +117,8 @@ int main(){
         if(fibreHisto->GetBinContent(i)!=0){
             fibreNumbers.push_back(i);
         }
-    }
+    }*/
+    fibreNumbers.push_back(79);
     cout << "Obtained fibre numbers" << endl;
     for(unsigned int i=0; i<fibreNumbers.size(); i++){
         cout << "Fibres: "<<fibreNumbers[i]<<endl;
@@ -131,7 +146,7 @@ int main(){
         cout << "Completed Time cuts" << endl;
         TMinuit min(1);
         min.SetFCN(funcn);
-        min.SetErrorDef(4);
+        min.SetErrorDef(1.0);
         min.SetPrintLevel(1);
         string fibreNum;
         ss << fibreNumbers[i];
@@ -142,10 +157,17 @@ int main(){
         cout << fibreRad <<endl;
         min.DefineParameter(0,fibreRadOffset.c_str(),0,50,200,-200);
         min.Migrad();
+        double value;
+        double error;
+        min.GetParameter(0,value,error);
+        offsetAndErrors->SetBinContent(fibreNumbers[i],value);
+        offsetAndErrors->SetBinError(fibreNumbers[i],error);
         free(numHits);
         free(hitTimes);
         free(hitErrors);
     }
+    offsetAndErrors->Write();
+    plot_file->Close();
     return 0;
 }
 
@@ -203,6 +225,7 @@ void timeCuts(int fibreNumber){
         //If less than 30 hits cant really do statistics
         if(numHits[i]<=30){
             hitTimes[i] = 0;
+            numHits[i] = 0;
         }
        //cout << "Hit Times: "<<hitTimes[i]<<" num Hits "<<numHits[i]<<endl;
     }

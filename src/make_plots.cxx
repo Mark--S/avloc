@@ -66,11 +66,13 @@ int main(int argc,char **argv)
   RAT::DU::Utility::Get()->BeginOfRun();
   
   TFile * ntuple_file = new TFile(ntuple_filename.data(),"READ");
+  TFile * ntuple_file2 = new TFile("totalHighStatsTuple.root","READ");
   if ( !ntuple_file->IsOpen() ) {
     cerr << "Could not open file " << ntuple_filename << endl;
     return 0;
   }
   TNtuple * ntuple = (TNtuple*)ntuple_file->Get("avloctuple");
+  TNtuple * ntupleOffset = (TNtuple*)ntuple_file2->Get("avloctuple");
   assert(ntuple);
   ntuple->Print();
 
@@ -82,7 +84,8 @@ int main(int argc,char **argv)
   TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,500.,1);
   //time_histograms(ntuple,distance,fibre_nr,sub_nr);
   plot_offset(ntuple,distance,fibre_nr,sub_nr);
-  //plotAverageHitOffset(ntuple,distance);
+  //plotAVFlightDifference(ntuple, ntupleOffset ,distance, fibre_nr, sub_nr);
+ // plotAverageHitOffset(ntuple,distance);
   cout << "Made Histograms"<<endl;
   hflatmap->Write();
   plot_file->Close();
