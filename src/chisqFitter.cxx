@@ -72,9 +72,9 @@ int main(int argc, char ** argv){
     }
     string rat     = string(ratroot);
     string pmtfile = rat;
-    pmtfile += "/data/pmt/snoman.ratdb";
+    pmtfile += "/data/pmt/airfill2.ratdb";
     string geofile = rat;
-    geofile += "/data/geo/snoplus_water.geo";
+    geofile += "/data/geo/snoplus.geo";
     db->Load(pmtfile);
     db->Load(geofile);
     std::cout << "DOING BEGIN OF RUN§" << std::endl;
@@ -281,10 +281,10 @@ double trialFunction(int fibreNumber, int LCN,double AVOffset ){
     */
     lp.SetAVOffset(AVOffset);
     double energy = 0.00000243658;
-    double localityVal = 20;
+    double localityVal = 1;
     lp.CalcByPosition(led.position, PMTPos, energy, localityVal);
     double distInWater = lp.GetDistInWater();
-    double distInScint = lp.GetDistInScint();
+    double distInScint = lp.GetDistInInnerAV();
     double distInAV = lp.GetDistInAV();
     double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
     //cout << "calcTime: "<<calcTime<< " Fibre number: "<<fibreNumber<<" PMT LCN: "<<LCN<<endl;

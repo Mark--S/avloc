@@ -3,13 +3,13 @@
 import string
 import os
 
-scratch = "/mnt/lustre/epp_scratch/neutrino/ms711/avloc/avloc/rat_macros/highStats"
+scratch = "/mnt/lustre/epp_scratch/neutrino/ms711/avloc/avloc/rat_macros/highStatsShifted"
 template_macro = string.Template(file("AV_loc.mac", "r").read())
 template_script = string.Template(file("script.sh", "r").read())
 
 fibres = ["FT003A","FT014A","FT020A","FT026A","FT028A","FT044A","FT055A","FT072A","FT075A","FT079A"]
 
-disps = [0.0]
+disps = [100.0]
 
 for fibre in fibres:
 	for disp in disps:
