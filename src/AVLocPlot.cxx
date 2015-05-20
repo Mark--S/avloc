@@ -366,6 +366,12 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 double distInScint = lp.GetDistInInnerAV();
                 double distInAV = lp.GetDistInAV();
                 double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+                
+                
+                //ADD THIS FOR PMT TRANSITION TIME
+                timeOfFlight += 0.9388
+                
+                    
                 histo_mapPE[lcn]->Fill(time-peTime);
                 histo_map[lcn]->Fill(time-timeOfFlight);
                 //cout << time << endl;
@@ -501,6 +507,13 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
             double distInAV = lp.GetDistInAV();
             //cout << "Calculating Time of Flight bin Num: "<<binNum<<endl;
             double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+
+
+            //ADD THIS FOR PMT TRANSITION TIME
+            timeOfFlight += 0.9388
+
+
+
             distanceMap[binNum]->Fill(time-timeOfFlight);
         }
     }
