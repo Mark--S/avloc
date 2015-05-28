@@ -51,7 +51,7 @@ void LoadDataBase(string logname)
 PMTInfo GetPMTpositions(void) {
   cout << "Loading PMT positions" << endl;
   //const double offset = 56.7; // difference front PMT and bucket in mm
-  const double offset = 113.3;
+  const double offset = 0.0;
   RAT::DB* db = RAT::DB::Get();
   assert(db);
   char* ratroot = getenv("RATROOT");
@@ -71,13 +71,13 @@ PMTInfo GetPMTpositions(void) {
   pmt_info.y_pos = pmtInfo->GetDArray("y");
   pmt_info.z_pos = pmtInfo->GetDArray("z");
   cout << "Got Position arrays" << endl;
-  vector<double> xDir = pmtInfo->GetDArray("v");
-  vector<double> yDir = pmtInfo->GetDArray("u");
-  vector<double> zDir = pmtInfo->GetDArray("w");
+  pmt_info.x_dir = pmtInfo->GetDArray("v");
+  pmt_info.y_dir = pmtInfo->GetDArray("u");
+  pmt_info.z_dir = pmtInfo->GetDArray("w");
   cout << "Obtained ARRAYS" << endl;
-  for ( unsigned int i = 0 ; i < xDir.size() ; ++i ) {
+  for ( unsigned int i = 0 ; i < pmt_info.x_dir.size() ; ++i ) {
     TVector3 pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
-    TVector3 dir(xDir[i],yDir[i],zDir[i]);
+    TVector3 dir(pmt_info.x_dir[i],pmt_info.y_dir[i],pmt_info.z_dir[i]);
     //cerr << pos.Mag() << " -> "; 
     pos += dir.Unit()*offset;
     pmt_info.x_pos[i] = pos.X();

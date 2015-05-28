@@ -222,7 +222,7 @@ TH2D * flatmap_ntuple(TNtuple * ntuple, double distance, int fibre_nr, int sub_n
         int ybin = int((1-icosProj.Y())*ybins);
         int bin = hflatmap->GetBin(xbin,ybin);
         if(pmt_hits[i]>0){
-            printf("Hits on PMT %d : %d\n",i,pmt_hits[i]);
+            //printf("Hits on PMT %d : %d\n",i,pmt_hits[i]);
             hflatmap->SetBinContent(bin,pmt_hits[i]);
         }
     }
@@ -358,6 +358,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
            // cout << "Set UP histo map" <<endl;
             if ( fibre == fibre_nr && time > 0. && time < 50. ) {
                 TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
+                TVector3 PMT_dir(pmt_info.x_dir[lcn],pmt_info.y_dir[lcn],pmt_info.z_dir[lcn]);
                 //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
                 double localityVal = 1.0;
                 double energy = lp.WavelengthToEnergy(506.787);
@@ -365,11 +366,14 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 double distInWater = lp.GetDistInWater();
                 double distInScint = lp.GetDistInInnerAV();
                 double distInAV = lp.GetDistInAV();
+                TVector3 directionOfEntry = lp.GetIncidentVecOnPMT();
+                double angleOfEntry = acos(directionOfEntry.Dot(PMT_dir));
+                angleOfEntry = angleOfEntry*TMath::RadToDeg();
                 double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
                 
                 
                 //ADD THIS FOR PMT TRANSITION TIME
-                timeOfFlight += 0.9388
+                timeOfFlight += gv.PMTBucketTime(angleOfEntry);
                 
                     
                 histo_mapPE[lcn]->Fill(time-peTime);
@@ -405,7 +409,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
             // if at least 30 entries, calculate mean and rms
             TVector3 PMT_pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
             double dist = (PMT_pos-led.position).Mag();
-            printf("Hits on PMT timing %d : %d\n",i,histo_map[i]->GetEntries());
+            //printf("Hits on PMT timing %d : %d\n",i,histo_map[i]->GetEntries());
             if (histo_map[i]->GetEntries() > 30 && dist<distance) {
                 histo_map[i]->Fit("gaus");
                 histo_mapPE[i]->Fit("gaus");
@@ -493,10 +497,10 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
             }
             //cout << "Getting pmt Position"<<endl;
             TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
+            TVector3 PMT_dir(pmt_info.x_dir[lcn],pmt_info.y_dir[lcn],pmt_info.z_dir[lcn]);
             //cout << "Getting fibbre information" <<endl;
             LEDInfo   led    = GetLEDInfoFromFibreNr(fibre, sub);
             //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
-            TVector3 hypPMTPos(0,0,0);
             double lambda = 508;
             double localityVal = 1.0;
             double energy = 0.00000243658;
@@ -505,12 +509,15 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
             double distInWater = lp.GetDistInWater();
             double distInScint = lp.GetDistInInnerAV();
             double distInAV = lp.GetDistInAV();
+            TVector3 directionOfEntry = lp.GetIncidentVecOnPMT();
+            double angleOfEntry = acos(directionOfEntry.Dot(PMT_dir));
+            angleOfEntry = angleOfEntry*TMath::RadToDeg();
             //cout << "Calculating Time of Flight bin Num: "<<binNum<<endl;
             double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
 
 
             //ADD THIS FOR PMT TRANSITION TIME
-            timeOfFlight += 0.9388
+            timeOfFlight += gv.PMTBucketTime(angleOfEntry);
 
 
 
