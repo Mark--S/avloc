@@ -50,7 +50,7 @@ int main(int argc,char **argv)
   }
   string rat     = string(ratroot);
   string pmtfile = rat;
-  pmtfile += "/data/pmt/snoman.ratdb";
+  pmtfile += "/data/pmt/airfill2.ratdb";
   RAT::DB * db = RAT::DB::Get();
   assert(db);
   db->LoadFile(pmtfile);
@@ -61,20 +61,20 @@ int main(int argc,char **argv)
   pmt_info.y_pos = pmtInfo->GetDArray("y");
   pmt_info.z_pos = pmtInfo->GetDArray("z");
   string geofile = rat;
-  geofile += "/data/geo/snoplus_water.geo";
+  geofile += "/data/geo/snoplus.geo";
   db->Load(geofile);
   //RAT::DB::Get()->LoadDefaults();
   db->Load(pmtfile);
   RAT::DU::Utility::Get()->BeginOfRun();
   
   TFile * ntuple_file = new TFile(ntuple_filename.data(),"READ");
-  TFile * ntuple_file2 = new TFile("totalHighStatsTuple.root","READ");
+  //TFile * ntuple_file2 = new TFile("totalHighStatsTuple.root","READ");
   if ( !ntuple_file->IsOpen() ) {
     cerr << "Could not open file " << ntuple_filename << endl;
     return 0;
   }
   TNtuple * ntuple = (TNtuple*)ntuple_file->Get("avloctuple");
-  TNtuple * ntupleOffset = (TNtuple*)ntuple_file2->Get("avloctuple");
+  //TNtuple * ntupleOffset = (TNtuple*)ntuple_file2->Get("avloctuple");
   assert(ntuple);
   ntuple->Print();
 
@@ -83,7 +83,7 @@ int main(int argc,char **argv)
     cerr << "Could not open file " << plot_filename << endl;
     return 0;
   }
-  TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,500.,1);
+  TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,50.,true);
   //time_histograms(ntuple,distance,fibre_nr,sub_nr);
   plot_offset(ntuple,distance,fibre_nr,sub_nr, AVOffset);
   //plotAVFlightDifference(ntuple, ntupleOffset ,distance, fibre_nr, sub_nr);

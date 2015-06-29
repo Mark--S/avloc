@@ -51,7 +51,7 @@ void LoadDataBase(string logname)
 PMTInfo GetPMTpositions(void) {
   cout << "Loading PMT positions" << endl;
   //const double offset = 56.7; // difference front PMT and bucket in mm
-  const double offset = ((56.7+113.3)/2.0);
+  const double offset = 0.0;
   RAT::DB* db = RAT::DB::Get();
   assert(db);
   char* ratroot = getenv("RATROOT");
@@ -61,7 +61,7 @@ PMTInfo GetPMTpositions(void) {
   }
   string rat     = string(ratroot);
     string pmtfile = rat;
-  pmtfile += "/data/pmt/snoman.ratdb";
+  pmtfile += "/data/pmt/airfill2.ratdb";
   db->LoadFile(pmtfile);
   RAT::DBLinkPtr pmtInfo = db->GetLink("PMTINFO");
   assert(pmtInfo);

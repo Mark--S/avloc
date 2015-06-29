@@ -81,7 +81,7 @@ int main(int argc,char **argv)
   }
   string rat     = string(ratroot);
   string pmtfile = rat;
-  pmtfile += "/data/pmt/snoman.ratdb";
+  pmtfile += "/data/pmt/airfill2.ratdb";
   RAT::DB * db = RAT::DB::Get();
   assert(db);
   db->LoadFile(pmtfile);
@@ -92,7 +92,7 @@ int main(int argc,char **argv)
   pmt_info.y_pos = pmtInfo->GetDArray("y");
   pmt_info.z_pos = pmtInfo->GetDArray("z");
   string geofile = rat;
-  geofile += "/data/geo/snoplus_water.geo";
+  geofile += "/data/geo/snoplus.geo";
   db->Load(geofile);
   //RAT::DB::Get()->LoadDefaults();
   db->Load(pmtfile);

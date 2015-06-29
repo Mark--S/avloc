@@ -78,9 +78,9 @@ int main(int argc, char ** argv){
     }
     string rat     = string(ratroot);
     string pmtfile = rat;
-    pmtfile += "/data/pmt/snoman.ratdb";
+    pmtfile += "/data/pmt/airfill2.ratdb";
     string geofile = rat;
-    geofile += "/data/geo/snoplus_water.geo";
+    geofile += "/data/geo/snoplus.geo";
     db->Load(pmtfile);
     db->Load(geofile);
     std::cout << "DOING BEGIN OF RUN§" << std::endl;

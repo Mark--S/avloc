@@ -7,10 +7,15 @@
 /// \author Rob Stainforth <r.stainforth@liv.ac.uk>
 ///
 /// REVISION HISTORY:\n
-///     02/2013 : Rob Stainforth - First Revision, new file. \n
-///     12/2013 : Rob Stainforth - Updated to include ELLIE reflections \n
-///   2014-03-01 : P Jones - refactor as part of ds review. \n
-///   2014-04-28 : Rob Stainforth - rename class from LightPath -> LightPathCalculator \n
+///  -   02/2013  : Rob Stainforth - First Revision, new file.
+///  -   12/2013  : Rob Stainforth - Updated to include ELLIE reflections
+///  - 2014-03-01 : P Jones - refactor as part of ds review.
+///  - 2014-04-28 : Rob Stainforth - rename class from LightPath -> LightPathCalculator
+///  - 2015-01-23 : Rob Stainforth - Revised path calculation
+///  - 2015-02-24 : Rob Stainforth - Error handling for passed 'nan' or 'inf' values
+///  - 2015-03-05 : Rob Stainforth - Changed warning messages to debug statements
+///  - 2015-03-05 : M Mottram - Updated warnings for partial fill geometry.
+///  - 2015-04-20 : Rob Stainforth - Fix divide by zero check in DTheta* methods.
 ///
 /// \details Returns the refracted path through the scintillator 
 /// AV and water of the detector region. Currently requires single 
@@ -74,7 +79,7 @@ namespace RAT
       /// Initalise the refractive indices from the database
       ///
       /// @param[in] dbTable Link to the RATDB table
-      /// @param{in,out] property The TGraph to store the refractive indices in
+      /// @param[in,out] property The TGraph to store the refractive indices in
       void LoadRefractiveIndex( DBLinkPtr dbTable,
                                 TGraph& property );
 
@@ -103,8 +108,8 @@ namespace RAT
       /// @param[in] localityVal The accepted tolerance [mm] for how close the path is calculated to the 'pmtPos' (defaults to 0.0 -> Straight Line Calculation)
       void CalcByPosition( const TVector3& eventPos,
                            const TVector3& pmtPos,
-                           const Double_t& energyMeV = 3.103125 * 1e-6,
-                           const Double_t& localityVal = 0.0 );
+                           const Double_t energyMeV = 3.103125 * 1e-6,
+                           const Double_t localityVal = 0.0 );
 
       /// Used for partial fill geometry.
       /// Use this to calculate the path of the light from 'eventPos' to 'pmtPos'.
@@ -118,8 +123,8 @@ namespace RAT
       /// @param[in] localityVal The accepted tolerance [mm] for how close the path is calculated to the 'pmtPos' (defaults to 0.0 -> Straight Line Calculation)
       void CalcByPositionPartial( const TVector3& eventPos,
                                   const TVector3& pmtPos, 
-                                  const Double_t& energy = 3.103125 * 1e-6,
-                                  const Double_t& localityVal = 0.0 );
+                                  const Double_t energy = 3.103125 * 1e-6,
+                                  const Double_t localityVal = 0.0 );
 
       /// Calculate the solid angle for this light path, as subtended at the start point from the PMT
       /// at the end point of the light path.
@@ -142,38 +147,58 @@ namespace RAT
       /// Use the respective 'getters' to return these values.
       void CalculateFresnelTRCoeff();
 
+      /// Calculate the parallel component of the Fresnel transmission coefficient
+      ///
+      /// @param[in] incRI The incident progatating medium refractive index
+      /// @param[in] refRI The refracted propagating medium refractive index
+      /// @param[in] incAngle The incident angle on the surface
+      /// @param[out] The parallel component of the Fresnel transmission coefficient
+      Double_t CalculateParallelTransmissionCoefficient( const Double_t incRI,
+                                                         const Double_t refRI,
+                                                         const Double_t incAngle );
+
+      /// Calculate the perpendicular component of the Fresnel transmission coefficient
+      ///
+      /// @param[in] incRI The incident progatating medium refractive index
+      /// @param[in] refRI The refracted propagating medium refractive index
+      /// @param[in] incAngle The incident angle on the surface
+      /// @param[out] The perpendicular component of the Fresnel transmission coefficient
+      Double_t CalculatePerpendicularTransmissionCoefficient( const Double_t incRI,
+                                                              const Double_t refRI,
+                                                              const Double_t incAngle );
+
       /////////////////////////////////
       ////////     GETTERS     ////////
       /////////////////////////////////
       
-      /// Return refractive index in scintillator for a given wavelength in MeV
-      /// @param[in] energy The wavelength in MeV
+      /// Return refractive index in scintillator/innerAV for a given wavelength (energy) in MeV
+      /// @param[in] energy The wavelength (energy) in MeV
       ///
-      /// @return The refractive index in the scintillator for this wavelength
-      Double_t GetScintRI( const Double_t energy ) const { return fScintRI.Eval( energy ); }
+      /// @return The refractive index in the scintillator for this wavelength (energy)
+      Double_t GetInnerAVRI( const Double_t energy ) const { return fInnerAVRI.Eval( energy ); }
 
-      /// Return refractive index in the upper target (partial fill) for a given wavelength in MeV
-      /// @param[in] energy The wavelength in MeV
+      /// Return refractive index in the upper target (partial fill) for a given wavelength (energy) in MeV
+      /// @param[in] energy The wavelength (energy) in MeV
       ///
-      /// @return The refractive index in the upper filled part of the detector for this wavelength
+      /// @return The refractive index in the upper filled part of the detector for this wavelength (energy)
       Double_t GetUpperTargetRI( const Double_t energy ) const { return fUpperTargetRI.Eval( energy ); }
 
-      /// Return refractive index in the lower target (partial fill) for a given wavelength in MeV
-      /// @param[in] energy The wavelength in MeV
+      /// Return refractive index in the lower target (partial fill) for a given wavelength (energy) in MeV
+      /// @param[in] energy The wavelength (energy) in MeV
       ///
-      /// @return The refractive index in the lower filled part of the detector for this wavelength
+      /// @return The refractive index in the lower filled part of the detector for this wavelength (energy)
       Double_t GetLowerTargetRI( const Double_t energy ) const { return fLowerTargetRI.Eval( energy ); }
       
-      /// Return refractive index in AV for a given wavelength in MeV
-      /// @param[in] energy The wavelength in MeV
+      /// Return refractive index in AV for a given wavelength (energy) in MeV
+      /// @param[in] energy The wavelength (energy) in MeV
       ///
-      /// @return The refractive index in the AV for this wavelength
+      /// @return The refractive index in the AV for this wavelength (energy)
       Double_t GetAVRI( const Double_t energy ) const { return fAVRI.Eval( energy ); }
       
-      /// Return refractive index in water for a given wavelength in MeV
-      /// @param[in] energy The wavelength
+      /// Return refractive index in water for a given wavelength (energy) in MeV
+      /// @param[in] energy The wavelength (energy) in MeV
       ///
-      /// @return The refractive index in the water for this wavelength
+      /// @return The refractive index in the water for this wavelength (energy)
       Double_t GetWaterRI( const Double_t energy ) const { return fWaterRI.Eval( energy ); }
       
       /// Return the loop ceiling value 
@@ -192,18 +217,18 @@ namespace RAT
       /// for the path. If so, then the values of the distances in the scintillator, AV and water are
       /// from straight line path approximations.
       ///
-      /// @return TRUE: if the path encountered total internal reflection, FALSE: if not
+      /// @return TRUE: The path encountered total internal reflection, FALSE: It didn't
       Bool_t GetTIR() const { return fIsTIR; }
       
-      /// Return whether the given end point was not calculated to within 1000 mm of the calculated end point.
+      /// Return whether the given end point was not calculated to within 'localityVal' of the calculated end point. 'localityVal' being the tolerance in mm for the required end path to the PMT. (see CalcByPosition)
       /// i.e. final path location > localityVal away from PMT position
       ///
-      /// @return TRUE: if the end position of the path is far from the required end position FALSE: if not
+      /// @return TRUE: The end position of the path is outside the required tolerance. FALSE: It isn't
       Bool_t GetResvHit() const { return fResvHit; }
 
       /// Return whether the light path enters the neck of the AV
       /// If TRUE: then there are also distances calculated for the scintillator, AV and water from 
-      /// passing through the neck, see 'GetDistInNeckScint', GetDistInNeckAV' and 'GetDistInNeckWater'
+      /// passing through the neck, see 'GetDistInNeckInnerAV', GetDistInNeckAV' and 'GetDistInNeckWater'
       ///
       /// @return TRUE: if the light path enters the neck of the AV FALSE: if not
       Bool_t GetXAVNeck() const { return fXAVNeck; }
@@ -213,6 +238,7 @@ namespace RAT
       /// @return TRUE: if the light path is a straight line FALSE: if not
       Bool_t GetStraightLine() const { return fStraightLine; }
 
+      void SetAVOffset(Double_t newOffset){fAVOffset = newOffset;}
       /// Return whether the ELLIE reflected distances are required for start positions outside the AV (i.e. in the water)
       /// If TRUE: then it is assumed that PMTs surrounding the starting position in the water (most likely a fibre position)
       /// are hit from reflections off of the AV. PMTs on the far side are assumed to have light paths associated
@@ -236,8 +262,8 @@ namespace RAT
       /// @return The fill fraction of the detector
       Double_t GetFillFraction() const { return fFillFraction; }
 
-      /// @return The distance in Scintillator
-      Double_t GetDistInScint() const { return fDistInScint; }
+      /// @return The distance in Scintillator/InnerAV region
+      Double_t GetDistInInnerAV() const { return fDistInInnerAV; }
 
       /// @return The distance in the acrylic of the AV
       Double_t GetDistInAV() const { return fDistInAV; }
@@ -252,7 +278,7 @@ namespace RAT
       Double_t GetDistInLowerTarget() const { return fDistInLowerTarget; }
 
       /// @return The distance in the scintillator in the neck region
-      Double_t GetDistInNeckScint() const { return fDistInNeckScint; }
+      Double_t GetDistInNeckInnerAV() const { return fDistInNeckInnerAV; }
 
       /// @return The distance in the acrylic in the neck region
       Double_t GetDistInNeckAV() const { return fDistInNeckAV; }
@@ -261,10 +287,10 @@ namespace RAT
       Double_t GetDistInNeckWater() const { return fDistInNeckWater; }
 
       /// @return The total distance on the light path
-      Double_t GetTotalDist() { return ( fDistInScint + fDistInAV + fDistInWater ); }
+      Double_t GetTotalDist() { return ( fDistInInnerAV + fDistInAV + fDistInWater ); }
 
       /// @return The total distance of the light path for a partial fill geometry
-      Double_t GetTotalDistPartial() { return ( fDistInScint + fDistInAV + fDistInWater ); }
+      Double_t GetTotalDistPartial() { return ( fDistInUpperTarget + fDistInLowerTarget + fDistInAV + fDistInWater ); }
 
       /// @return The solid angle as calculated by 'CalculateSolidAngle'
       Double_t GetSolidAngle() const { return fSolidAngle; }
@@ -293,11 +319,16 @@ namespace RAT
       /// @return The (unit normalised) initial light vector from the source position
       TVector3 GetInitialLightVec() const { return fInitialLightVec; }
 
-      /// NOTE: For the below points on AV, depending on the Light Path
+      /// NOTE: For the below points on the AV, depending on the Light Path
       /// type, it may not have 1st, 2nd, 3rd or 4th points on the AV
       /// where the path intersected. This is based on the LightPathType,
       /// see comments under 'fLightPathType' private member declaration
-      /// for details.
+      /// for details. e.g. a path with starts inside the innerAV region
+      /// and proceeds outwards to a PMT will only intersect the AV twice.
+      /// Alternatively, a path which begins outside the AV could travel
+      /// straight through the AV and therefore intersect the AV four times;
+      /// twice going in, and twice going out. Points here are denoted by the
+      /// interface points between material interfaces in the detector.
 
       /// @return The first point on the AV where the light path intersects
       TVector3 GetPointOnAV1st() const { return fPointOnAV1st; }
@@ -352,6 +383,12 @@ namespace RAT
       ////////     SETTERS     ////////
       /////////////////////////////////
 
+      /// Set the starting position of the light path
+      void SetStartPos( const TVector3& startPos ) { fStartPos = startPos; }
+
+      /// Set the end position of the light path
+      void SetEndPos( const TVector3& endPos ) { fEndPos = endPos; }
+
       /// For calculations where the event position is in the water region/PSUP
       /// Calculations of the light path distance can be calculated assuming it first 
       /// reflected off of the AV first. In which case SetELLIEReflect must be passed
@@ -363,15 +400,177 @@ namespace RAT
         fELLIEReflect = reflect;
       }
       
-      //Set the radius of the AV for AVloc
-      void SetAVRadius(Double_t newRadius){fAVOuterRadius = newRadius;}
-      
-      void SetAVOffset(Double_t newOffset){fAVOffset = newOffset;}
       // This ROOT macro adds dictionary methods to this class.
       // The number is 0 as this class is never, and should never be written to disc.
       // It assumes this class has no virtual methods, use ClassDef if change this.
       ClassDefNV( LightPathCalculator, 0 );
+
     private:
+
+      //////////////////////////////////////////////////
+      ////////     PRIVATE UTILITY ROUTINES     ////////
+      //////////////////////////////////////////////////
+
+      /// Utility Routines for refraction between [Scint/InnerAV]/ AV / Water
+      /// 1-3: Inside and Outside light path types
+      /// 4-5: Outside light path types only
+      /// ThetaResidual: The difference between fPMTTargetTheta and the sum 
+      /// of ( Theta1st + Theta2nd + Theta3rd )
+      /// or ( Theta1st + Theta2nd + Theta3rd + Theta4th + Theta5th )
+
+      /// For a typical path there are various angles defined. A path is calculated
+      /// in the 2D-plane containing BOTH the start(source) position and the end(pmt)
+      /// position. This ensures that the path calculated is the minimum refracted
+      /// path. 
+      /// To begin, a specific cordinate system is set up for each path, the (x,y,z) directions of this
+      /// coordinate system are defined as follows:
+
+      /// x : The direction defined by the radial vector pointing from the origin (centre of AV)
+      ///     to the source position.
+      /// z : The direction perpendicular to both the radial vector from the origin (centre of AV) 
+      ///     to the source position, and the radial vector from the origin (centre of AV) to the
+      ///     end position. Mathematically speaking, the z-unit direction defines the 2D-plane
+      ///     in which the path is calculated
+      /// y : The direction defined by the cross product of 'z CROSS x'. The y direction
+      ///     is therefore perpendicular to both x and z directions, but lies in the same
+      ///     2D-plane as the x direction.
+      
+      /// These are utility rountines which calculate the angle of refraction between
+      /// the material boundaries in the detector. For a typical path whose start position is
+      /// inside the AV, there will be three sets of angles:
+      
+      /// 1. The angle between the source position and the scint/innerAV and AV interface point
+      ///    as viewed from the origin (centre of AV).
+      /// 2. The angle between the first interface point (see above [1.]) and the AV/Water interface
+      ///    point as viewed from the origin (centre of AV).
+      /// 3. The angle between the second interface point (see above [2.]) and the end position
+      ///    of the path.
+
+      /// In the following, 'theta' is the test value for the initial direction of the path
+      /// which is minimised against in RTSafe(). It is the initial and defining angle which
+      /// ultimate determines the paths course throughout the rest of the detector and consequently
+      /// the values of Theta1, Theta2, Theta3 etc. which follow as a result.
+      
+      /// The angle between the source position and the first AV intersection point
+      /// as viewed from the origin (centre of AV)
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The angle between the source position and the first intersection point
+      /// for this value of theta.
+      Double_t Theta1st( const Double_t theta );
+      
+      /// The derivative on this first angle (Theta1) with respect to 'theta'
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The derivative on this first angle (Theta1) with respect to 'theta'
+      Double_t DTheta1st( const Double_t theta );
+
+      /// The angle between the first AV intersection point and the second AV interseciton point
+      /// as viewed from the origin (centre of AV)
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The angle between the first AV intersection point and the second AV interseciton 
+      /// point as viewed from the origin (centre of AV)
+      Double_t Theta2nd( const Double_t theta );
+
+      /// The derivative on this second angle (Theta2) with respect to 'theta'
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The derivative on this second angle (Theta2) with respect to 'theta'
+      Double_t DTheta2nd( const Double_t theta );
+
+      /// The angle between the second AV intersection point and either the PMT position (source
+      /// inside the AV) or the third intersection point (source outside the AV).
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The angle between the second AV intersection point and either the 
+      /// PMT position (source inside the AV) or the third intersection point 
+      /// (source outside the AV).
+      Double_t Theta3rd( const Double_t theta );
+
+      /// The derivative on this third angle (Theta3) with respect to 'theta'
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The derivative on this third angle (Theta3) with respect to 'theta'
+      Double_t DTheta3rd( const Double_t theta );
+      
+      /// The angle between the third AV intersection point and the fourth 
+      /// intersection point (source outside the AV).
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The angle between the third AV intersection point and the fourth 
+      /// intersection point (source outside the AV).
+      Double_t Theta4th( const Double_t theta );
+
+      /// The derivative on this fourth angle (Theta4) with respect to 'theta'
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The derivative on this fourth angle (Theta4) with respect to 'theta'
+      Double_t DTheta4th( const Double_t theta );
+
+      /// The angle between the fourth AV intersection point and the fifth 
+      /// intersection point (source outside the AV).
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The angle between the third AV intersection point and the fifth 
+      /// intersection point (source outside the AV).
+      Double_t Theta5th( const Double_t theta);
+
+      /// The derivative on this fifth angle (Theta5) with respect to 'theta'
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The derivative on this fifth angle (Theta5) with respect to 'theta'
+      Double_t DTheta5th( const Double_t theta);
+      
+      /// Calculate the residual between the target angle between the source and PMT position
+      /// and the calculated value.
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The residual between the target angle between the source and PMT position
+      /// and the calculated value.
+      Double_t ThetaResidual( const Double_t theta );
+
+      /// Calculate the derivative on this residual with respect to 'theta'
+      ///
+      /// @param[in] theta (passed by reference).
+      /// @return The derivative on this residual with respect to 'theta'
+      Double_t DThetaResidual( const Double_t theta );
+      
+      /// Utility function used by 'RTSafe()' to perform the minimiation for 
+      /// the optimal value of 'theta'.
+      ///
+      /// @param[in] theta The test value of 'theta' for this path.
+      /// @param[in,out] funcVal Computation of 'ThetaResidual()' based on 'theta'
+      /// @param[in,out] dFuncVal The derivative on the above value with respect to 'theta'
+      void FuncD( Double_t theta, Double_t &funcVal, Double_t &dFuncVal );
+
+      /// Using a combination of Newton-Raphson and bisection methods, 
+      /// this function returns the root of the function 'LightPathCalculator::Func'
+      /// defined on the domain [x1, x2] to within an acceptable accuracy of +/- xAcc
+      /// It returns the minimised (optimal) value of 'theta'
+      ///
+      /// @param[in] x1 The minimum possible value of 'theta' required.
+      /// @param[in] x2 The maximum possible value of 'theta' required.
+      /// @param[in] xAcc The acceptable tolerance allowed on this value of 'theta'
+      /// @return The minimised, optimal value of 'theta' for this path.
+      Double_t RTSafe( Double_t x1, Double_t x2, Double_t xAcc );
+
+
+      /// Calculates the distances for light paths which start inside
+      /// the AV
+      ///
+      /// @param[in] eventPos The starting location of the light path (inside the AV)
+      /// @param[out] pmtPos The end location of the light path (outside the AV)
+      Bool_t CalculateDistancesInnerAV( const TVector3& eventPos, 
+                                        const TVector3& pmtPos );
+      
+      /// Calculates the distances for light paths which start outside
+      /// of the AV
+      ///
+      /// @param[in] eventPos The starting location of the light path (outside of the AV)
+      /// @param[out] pmtPos The end location of the light path (outside the AV)
+      Bool_t CalculateDistancesOutsideAV( const TVector3& eventPos, 
+                                          const TVector3& pmtPos );
       
       /// Calculate the refracted path. Performs most of the work required to
       /// obtain a refracted path
@@ -382,18 +581,14 @@ namespace RAT
       /// Readjust the initial photon direction. Used if the previous path
       /// does not meet the locality conditions
       ///
-      /// @param[in] eventPos The starting point of the light path (typically an event position)
-      /// @param[in] pmtPos The end point of the PMT (typically a PMT position)
       /// @param[in] distWater distWater The point in the water where the light path EXITS OUT OF
-      /// @param[in] initOffset The initial unit vector pointing from the starting position for the light path direction
+      /// @param[in,out] initOffset The initial unit vector pointing from the starting position for the light path direction
       void ReadjustOffset( const TVector3& distWater,
                            TVector3& initOffset );
       
       /// Test the locality conditions for the hypothesised path end point
       /// against the actual 'required' light path end point (usually a PMT position )
       ///
-      /// @param[in] pmtPos The end point of the PMT (typically a PMT position)
-      /// @param[in] distWater distWater The point in the water where the light path EXITS OUT OF
       /// @param[in] i The final i-th value of the iteration that successfully calculated the light path
       ///
       /// @return TRUE: if the light path is close to the required position FALSE: if not
@@ -408,7 +603,7 @@ namespace RAT
       ///
       /// @return Calculate the closest angular displacement of a path close to a surface interface
       Double_t ClosestAngle( const TVector3& eventPos,
-                             const Double_t& edgeRadius );
+                             const Double_t edgeRadius );
 
       /// Calculate the maximum allowed angle between the event position
       /// and the PMT position for it to reflect off of the AV
@@ -418,7 +613,7 @@ namespace RAT
       ///
       /// @return Calculate the maximum allowed angle between the event position and the PMT position for it to reflect off of the AV
       Double_t ReflectionAngle( const TVector3& eventPos,
-                                const Double_t& edgeRadius );
+                                const Double_t edgeRadius );
       
       
       /// Calculate refracted photon vector (unit normalised)
@@ -431,8 +626,8 @@ namespace RAT
       /// @return The refracted unit vector
       TVector3 PathRefraction( const TVector3& incidentVec,
                                const TVector3& incidentSurfVec,
-                               const Double_t& incRIndex,
-                               const Double_t& refRIndex );
+                               const Double_t incRIndex,
+                               const Double_t refRIndex );
       
       /// Calculate vector from some initial point ('startPos'), with an initial
       /// starting direction, 'startDir' to the edge of a sphere of given radius ('radiusFromCentre')
@@ -443,8 +638,8 @@ namespace RAT
       /// @param[in] outside Whether the starting position is outside of the sphere in question
       ///
       /// @return The vector at the spheres edge
-      TVector3 VectorToSphereEdge( const TVector3 startPos,
-                                   const TVector3 startDir,
+      TVector3 VectorToSphereEdge( const TVector3& startPos,
+                                   const TVector3& startDir,
                                    const Double_t radiusFromCentre,
                                    const Bool_t outside );
 
@@ -522,10 +717,11 @@ namespace RAT
       void SetTIR( const Bool_t val ) { fIsTIR = val; }
       
       /// Set if the calculated path was difficult to resolve.
-      /// (i.e. whether the path > 1000 mm away from the end path)
+      /// (i.e. whether the path > fPathPrecision mm away from the end path)
       ///
       /// @param[in] val TRUE: The end calculated position of the path is far from the required positions FALSE: It wasn't
       void SetResvHit( const Bool_t val ) { fResvHit = val; }
+
 
       ///////////////////////////////////////////////////
       /////////     PRIVATE MEMBER VARIABLES     ////////
@@ -539,7 +735,7 @@ namespace RAT
       Double_t fPMTRadius;                                               ///< Radius of the PMT bucket
       Double_t fFillZ;                                                   ///< z position of the partial fill
       
-      TGraph fScintRI;                                                   ///< Scintillator refractive index TGraph
+      TGraph fInnerAVRI;                                                 ///< Scintillator refractive index TGraph
       TGraph fUpperTargetRI;                                             ///< The 'un-filled' region of the detector refractive index
       TGraph fLowerTargetRI;                                             ///< The 'filled' region of the detector refractive index
       TGraph fAVRI;                                                      ///< AV refractive index TGraph
@@ -550,7 +746,7 @@ namespace RAT
       Double_t fFinalLoopSize;                                           ///< Final loop value which meets locality conditions
       Double_t fPathPrecision;                                           ///< The accepted path proximity/tolerance to the PMT location [mm]
 
-      Double_t fScintRIVal;                                              ///< The value of the scintillator refractive index used for this path
+      Double_t fInnerAVRIVal;                                            ///< The value of the scintillator refractive index used for this path
       Double_t fUpperTargetRIVal;                                        ///< The value of the upper target volume index used for this path (partial fill)
       Double_t fLowerTargetRIVal;                                        ///< The value of the lower target volume index used for this path (partial fill)
       Double_t fAVRIVal;                                                 ///< The value of the AV refractive index used for this path
@@ -563,9 +759,8 @@ namespace RAT
       TVector3 fEndPos;                                                  ///< Required end position of the light path
       TVector3 fLightPathEndPos;                                         ///< Calculated end position of the light path
 
-      Double_t  fAVOffset;                                               ///< Offset of the AV from the origin (Used for AVloc)
+      Double_t fPMTTargetTheta;                                          ///< The target PMT theta angle for the light path
       
-
       Bool_t fIsTIR;                                                     ///< TRUE: Total Internal Reflection encountered FALSE: It wasn't
       Bool_t fResvHit;                                                   ///< TRUE: Difficult path to resolve and calculate FALSE: It wasn't
       Bool_t fXAVNeck;                                                   ///< TRUE: Path entered neck region FALSE: It didn't
@@ -575,7 +770,7 @@ namespace RAT
 
 
       // Note: Depending on the light path type (see 'fLightPathType'), the path may
-      // intersect the AV/Neck once, twice or three (times a lady?...sorry)
+      // intersect the AV/Neck once, twice or three
       // ...or four times
 
       TVector3 fPointOnAV1st;                                            ///< Point on AV where light path first hits the AV
@@ -585,17 +780,19 @@ namespace RAT
 
       TVector3 fPointOnNeck1st;                                          ///< Point on the Neck where the light path hits a first time
       TVector3 fPointOnNeck2nd;                                          ///< Point on the Neck where the light path hits a second time
+      TVector3 fPointOnNeck3rd;                                          ///< Point on the Neck where the light path hits a third time
+      TVector3 fPointOnNeck4th;                                          ///< Point on the Neck where the light path hits a fourth time
 
       eLightPathType fLightPathType;                                     ///< Light path type, based on what regions of the detector the path enters
 
       std::map< eLightPathType, std::string > fLightPathTypeMap;         ///< Map containing a descriptor for the light path type
 
-      Double_t fDistInScint;                                             ///< Distance in the scintillator region
+      Double_t fDistInInnerAV;                                             ///< Distance in the scintillator region
       Double_t fDistInUpperTarget;                                       ///< Distance in the upper target region (partial fill geometry)
       Double_t fDistInLowerTarget;                                       ///< Distance in the lower target region (partial fill geometry)
       Double_t fDistInAV;                                                ///< Distance in the acrylic region of the AV
       Double_t fDistInWater;                                             ///< Distance in the water region
-      Double_t fDistInNeckScint;                                         ///< Distance through the scintillator region in the neck (if GetXAVNeck() = TRUE)
+      Double_t fDistInNeckInnerAV;                                         ///< Distance through the scintillator region in the neck (if GetXAVNeck() = TRUE)
       Double_t fDistInNeckAV;                                            ///< Distance through the acrylic of the AV region in the neck (if GetXAVNeck() = TRUE)
       Double_t fDistInNeckWater;                                         ///< Distance through the water region in the neck (if GetXAVNeck() = TRUE)
 
@@ -608,6 +805,7 @@ namespace RAT
       Double_t fFresnelTCoeff;                                           ///< The combined Fresnel TRANSMISSION coefficient for this path
       Double_t fFresnelRCoeff;                                           ///< The combined Fresnel REFLECTIVITY coefficient for this path  
 
+      Double_t  fAVOffset;                                               ///< Offset of the AV from the origin (Used for AVloc)
     };
     
   } // namespace DU
