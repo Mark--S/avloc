@@ -503,9 +503,9 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
             //cout << "Getting fibbre information" <<endl;
             LEDInfo   led    = GetLEDInfoFromFibreNr(fibre, sub);
             //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
-            double lambda = 508;
-            double localityVal = 1.0;
-            double energy = 0.00000243658;
+            double lambda = 508e-6;
+            double localityVal = 10.0;
+            double energy = lp.WavelengthToEnergy(lambda);
             //cout << "Calculating by distance"<<endl;
             lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
             double distInWater = lp.GetDistInWater();
@@ -523,7 +523,6 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
 
 
 
->>>>>>> d4e3cd0f100e248d67c0185186a984534dc0cfcf
             distanceMap[binNum]->Fill(time-timeOfFlight);
         }
     }
