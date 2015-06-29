@@ -290,6 +290,31 @@ void time_histograms(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr
     time_histo->Write();
 }
 
+double bestHitTime(double hitTime, TVector3 fibrePos,TVector3 PMTPos, TVector3 PMTDir,RAT::DU::GroupVelocity gv, RAT::DU::LightPathCalculator lp){
+    TVector3 orthPMTDir = PMTDir.Orthogonal();
+    double bestResidual = 1000;
+    double output = -19999999;
+    double localityVal = 10.0;
+    double energy = lp.WavelengthToEnergy(500e-6);
+    for(double rotationAngle =0; rotationAngle<360; rotationAngle++){
+        for(double radius = 5; radius<134.5;radius+=10){ TVector3 testPos = PMTPos+orthPMTDir*cos(rotationAngle);
+            lp.CalcByPosition(fibrePos, PMTPos, energy, localityVal);
+            double distInWater = lp.GetDistInWater();
+            double distInInnerAV = lp.GetDistInInnerAV();
+            double distInAV = lp.GetDistInAV();
+            double timeOfFlight = gv.CalcByDistance(distInInnerAV,distInAV,distInWater,energy);
+            //Getting PMT Bucket time
+            double angleOfEntry = lp.GetIncidentVecOnPMT().Angle(PMTDir)*TMath::RadToDeg();
+            timeOfFlight += gv.PMTBucketTime(angleOfEntry);
+            if(fabs(hitTime-timeOfFlight)<bestResidual){
+                bestResidual = fabs(hitTime-timeOfFlight);
+                output = timeOfFlight;
+            }
+        }
+    }
+    return output;
+}
+
 void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, double AVOffset)
 {
     int nBins = 200;
@@ -356,11 +381,11 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
                 distanceInWater[lcn]->SetXTitle("distance (mm)");
             }
            // cout << "Set UP histo map" <<endl;
-            if ( fibre == fibre_nr && time > 0. && time < 50. ) {
+            if ( fibre == fibre_nr && time > 15. && time < 30. ) {
                 TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
                 TVector3 PMT_dir(pmt_info.x_dir[lcn],pmt_info.y_dir[lcn],pmt_info.z_dir[lcn]);
                 //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
-                double localityVal = 10.0;
+                /*double localityVal = 10.0;
                 double energy = lp.WavelengthToEnergy(506.787e-6);
                 lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
                 double distInWater = lp.GetDistInWater();
@@ -371,14 +396,15 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
                 double timeOfFlight = gv.CalcByDistance(distInInnerAV,distInAV,distInWater,energy);
                 //Getting PMT Bucket time
                 double angleOfEntry = lp.GetIncidentVecOnPMT().Angle(PMT_dir)*TMath::RadToDeg();
-                timeOfFlight += gv.PMTBucketTime(angleOfEntry);
+                timeOfFlight += gv.PMTBucketTime(angleOfEntry);*/
+                double timeOfFlight = bestHitTime(time,led.position,PMT_pos,PMT_dir,gv,lp);
                 histo_mapPE[lcn]->Fill(time-peTime);
                 histo_map[lcn]->Fill(time-timeOfFlight);
                 //cout << time << endl;
                 histo_mapNotOffset[lcn]->Fill(time);
-                distanceInAV[lcn]->Fill(distInAV);
+                /*distanceInAV[lcn]->Fill(distInAV);
                 distanceInWater[lcn]->Fill(distInWater);
-                distanceInScint[lcn]->Fill(distInInnerAV);
+                distanceInScint[lcn]->Fill(distInInnerAV);*/
             }
         }
     }
@@ -510,7 +536,7 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
             double distInInnerAV = lp.GetDistInInnerAV();
             double distInAV = lp.GetDistInAV();
             TVector3 directionOfEntry = lp.GetIncidentVecOnPMT();
-            double angleOfEntry = acos(directionOfEntry.Dot(PMT_dir));
+            double angleOfEntry = directionOfEntry.Angle(PMT_dir);
             angleOfEntry = angleOfEntry*TMath::RadToDeg();
             //cout << "Calculating Time of Flight bin Num: "<<binNum<<endl;
             double timeOfFlight = gv.CalcByDistance(distInInnerAV,distInAV,distInWater,energy);
