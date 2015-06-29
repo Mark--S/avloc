@@ -56,7 +56,7 @@ void time_histograms(TNtuple * ntuple, double distance = 100000., int fibre_nr =
 // (mean time observed - mean time expected)*vgroup
 // distance: max PMT distance to be considered (mm)
 // fibre_nr: fibre nr to analyse 
-void plot_offset(TNtuple * ntuple, double distance = 5000., int fibre_nr = 44, int sub_nr = 0);
+void plot_offset(TNtuple * ntuple, double distance = 5000., int fibre_nr = 44, int sub_nr = 0, double AVOffset =0);
 void plotAverageHitOffset(TNtuple * ntuple, double distance);
 //Plot the difference between two AV shifts
 void plotAVFlightDifference(TNtuple * ntuple1, TNtuple * ntuple2, double distance = 5000, int fibre_nr = 44, int sub_nr = 0);

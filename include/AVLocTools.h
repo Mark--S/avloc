@@ -34,6 +34,9 @@ struct PMTInfo {
   vector<double> x_pos;
   vector<double> y_pos;
   vector<double> z_pos;
+  vector<double> x_dir;
+  vector<double> y_dir;
+  vector<double> z_dir;
 };
 
 // Get PMT position - in RAT, this is the centre of the bucket, ie 5.67 cm in front of the PMT

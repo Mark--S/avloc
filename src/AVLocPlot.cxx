@@ -287,7 +287,7 @@ void time_histograms(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr
     time_histo->Write();
 }
 
-void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
+void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, double AVOffset)
 {
     int nBins = 200;
     LEDInfo   led    = GetLEDInfoFromFibreNr(fibre_nr, sub_nr);
@@ -295,7 +295,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     RAT::DU::GroupVelocity  gv = RAT::DU::Utility::Get()->GetGroupVelocity();
     RAT::DU::LightPathCalculator lp = RAT::DU::Utility::Get()->GetLightPathCalculator();
     lp.SetELLIEReflect(true);
-    lp.SetAVOffset(5.11867e+00);
+    lp.SetAVOffset(AVOffset);
     // effective refractive index:
     // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
     cout << "Set up Light Path Calculator"<<endl;
@@ -357,20 +357,26 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
                 //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
                 TVector3 hypPMTPos(0,0,0);
-                double localityVal = 20.0;
-                double energy = lp.WavelengthToEnergy(506.787);
+                double localityVal = 10.0;
+                double energy = lp.WavelengthToEnergy(506.787e-6);
                 lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
                 double distInWater = lp.GetDistInWater();
-                double distInScint = lp.GetDistInScint();
+                double distInInnerAV = lp.GetDistInInnerAV();
                 double distInAV = lp.GetDistInAV();
-                double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+                //Setting this for fibre 2mm infront of PMT
+                //distInWater = 2.0;
+                double timeOfFlight = gv.CalcByDistance(distInInnerAV,distInAV,distInWater,energy);
+                //Getting PMT Bucket time
+                TVector3 PMTDir (0,0,-1.0);
+                double angleOfEntry = lp.GetIncidentVecOnPMT().Angle(PMTDir)*TMath::RadToDeg();
+                timeOfFlight += gv.PMTBucketTime(angleOfEntry);
                 histo_mapPE[lcn]->Fill(time-peTime);
                 histo_map[lcn]->Fill(time-timeOfFlight);
                 //cout << time << endl;
                 histo_mapNotOffset[lcn]->Fill(time);
                 distanceInAV[lcn]->Fill(distInAV);
                 distanceInWater[lcn]->Fill(distInWater);
-                distanceInScint[lcn]->Fill(distInScint);
+                distanceInScint[lcn]->Fill(distInInnerAV);
             }
         }
     }
@@ -382,6 +388,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
             nBins,0.0,distance);
     TH1D * time_summary_Distance  = new TH1D("time_summary_DistanceNoOffset","average hit time with Distance",
             nBins,0.0,distance);
+    time_summary_Distance->GetYaxis()->SetRangeUser(21.0,23.5);
     char title[128];
     sprintf(title,"time distribution for reflections, fibre %i-%i",fibre_nr,sub_nr);
     TH1D * time_histo = new TH1D("time_histo",title, nBins+1,-10.05,10.05);
@@ -389,9 +396,10 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     time_summary->SetXTitle("LCN");
     time_summary->SetYTitle("hit_time (ns)");
     time_summary_offset->SetXTitle("Distance (mm)");
-    time_summary_offset->SetYTitle("Hit Time (ns)");
+    time_summary_offset->SetYTitle("Residuals (ns)");
     time_summary_Distance->SetXTitle("Distance (mm)");
     time_summary_Distance->SetYTitle("Hit Time (ns)");
+    double energy = lp.WavelengthToEnergy(506.787e-6);
     for (unsigned int i = 0 ; i < 10000 ; ++i ) {
         if (histo_map[i] != NULL ) {
             // if at least 30 entries, calculate mean and rms
@@ -409,7 +417,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
                 double muPE = fPE->GetParameter(1);
                 double siPE = fPE->GetParameter(2);
                 double muNotOffset = fNotOffset->GetParameter(1);
-                double siNotOffset = fNotOffset->GetParameter(2);
+                double siNotOffset = fNotOffset->GetParError(2);
                 TVector3 PMT_pos(pmt_info.x_pos[i],pmt_info.y_pos[i],pmt_info.z_pos[i]);
                 double dist = (PMT_pos-led.position).Mag();
                 //converting distance to bins 2500mm dist cut and 100 bins
@@ -430,6 +438,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr)
     cout << "Writing out offset histograms" << endl;
     time_summary->Write();
     time_summary_offset->Write();
+    time_summary_Distance->Fit("pol1");
     time_summary_Distance->Write();
     time_histo->Fit("gaus");
     time_histo_PE->Fit("gaus");
@@ -494,10 +503,10 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
             //cout << "Calculating by distance"<<endl;
             lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
             double distInWater = lp.GetDistInWater();
-            double distInScint = lp.GetDistInScint();
+            double distInInnerAV = lp.GetDistInInnerAV();
             double distInAV = lp.GetDistInAV();
             //cout << "Calculating Time of Flight bin Num: "<<binNum<<endl;
-            double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+            double timeOfFlight = gv.CalcByDistance(distInInnerAV,distInAV,distInWater,energy);
             distanceMap[binNum]->Fill(time-timeOfFlight);
         }
     }

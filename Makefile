@@ -10,11 +10,6 @@ include $(ROOTSYS)/etc/Makefile.arch
 -include $(ROOTSYS)/MyConfig.mk
 HdrSuf       = h
 SOFLAGS       = #-----------------------------------------------------------------------------
-# special programs
-#-----------------------------------------------------------------------------
-# special root
-AVLOCROOTO   =  src/avlocroot.$(ObjSuf)
-AVLOCROOT    =  bin/avlocroot$(ExeSuf)
 # make summary ntuple
 MAKENTUPLEO  =  src/make_ntuple.$(ObjSuf)
 MAKENTUPLE   =  bin/make_ntuple$(ExeSuf)
@@ -22,8 +17,8 @@ MAKENTUPLE   =  bin/make_ntuple$(ExeSuf)
 MAKEPLOTSO   =  src/make_plots.$(ObjSuf)
 MAKEPLOTS    =  bin/make_plots$(ExeSuf)
 # make a quick flatmap
-#FLATMAPO     =  src/plot_flatmap.$(ObjSuf)
-#FLATMAP      =  bin/plot_flatmap$(ExeSuf)
+FLATMAPO     =  src/plot_flatmap.$(ObjSuf)
+FLATMAP      =  bin/plot_flatmap$(ExeSuf)
 # make chisq fitter for AV radius
 MAKEFITTERO	 = src/chisqFitter.$(ObjSuf)
 MAKEFITTER = bin/chisqFitter$(ExeSuf)
@@ -39,24 +34,19 @@ AVLOCLIB     =  lib/libAVLoc.$(DllSuf)
 #-----------------------------------------------------------------------------
 # libraries to be included
 #-----------------------------------------------------------------------------
-ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Darwin 
+ALLLIBS      =  $(LIBS) -L$(ROOTSYS)/lib -lMinuit -L$(RATROOT)/lib  -lRATEvent_Linux
 NEXTLIBS = -Wl,-rpath,$(CURDIR)/lib/ -L$(CURDIR)/lib/ -lAVLoc
 #-----------------------------------------------------------------------------
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
 .PHONY:     READ
 
-all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(MAKEFITTER) $(AVLOCROOT) 
+all:	 $(AVLOCSO) $(AVLOCLIB) $(MAKENTUPLE) $(MAKEPLOTS) $(MAKEFITTER) 
 
 clean:
 		@rm -f $(AVLOCOBJS) core*  $(AVLOCLIB) $(AVLOCO) \
 		$(AVLOCROOTO) $(MAKENTUPLEO) $(MAKEPLOTSO) $(FLATMAPO) \
 		$(AVLOCROOT) $(MAKENTUPLE) $(MAKEPLOTS) $(FLATMAP)
 
-$(AVLOCROOT):	$(AVLOCROOTO) $(AVLOCLIB)
-		$(LD) $(LDFLAGS) $(ALLLIBS) $(NEXTLIBS) $(AVLOCROOTO) $(AVLOCLIB) \
-		$(OutPutOpt) $@
-		$(MT_EXE)
-		@echo "$@ done"
 
 $(MAKENTUPLE):	$(AVLOCLIB) $(MAKENTUPLEO)
 			$(LD) $(LDFLAGS) $(MAKENTUPLEO) $(AVLOCLIB) $(ALLLIBS)  \
@@ -83,7 +73,7 @@ $(MAKEFITTER):	$(AVLOCLIB) $(MAKEFITTERO)
 			@echo "$@ done"
 
 $(AVLOCLIB):	$(AVLOCOBJS)
-		$(LD)  -dynamiclib -single_module -install_name $(CURDIR)/$@ $(ALLLIBS) $^ $(OutPutOpt) $@
+		$(LD)  -shared $(ALLLIBS) $^ $(OutPutOpt) $@
 		@echo "$@ done"
 		@echo "libs $(SOFLAGS)" 
 

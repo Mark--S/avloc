@@ -1,5 +1,6 @@
 #include <include/AVLocTools.h>
 #include <RAT/DB.hh>
+#include <TMath.h>
 #include <TFile.h>
 //#include <TNTuple.h>
 #include <TVector3.h>
@@ -9,6 +10,8 @@
 #include <RAT/DB.hh>
 #include <iostream>
 #include <vector>
+#include <stdio.h>
+#include <TF1.h>
 #include <sstream>
 #include <RAT/DU/GroupVelocity.hh>
 #include <RAT/DU/LightPathCalculator.hh>
@@ -17,6 +20,9 @@ int fibre_nr;
 int sub_nr;
 //Distance cut for the PMTS
 double distCut = 1500.;
+//Systematic errors from LightPathCalculator
+//First term 20mm/c due to locality value 
+//Second Term due to 
 //PMT and LED info being loaded in from db
 LEDInfo led;     
 PMTInfo pmts;  
@@ -26,13 +32,13 @@ TVector3  PMTPos;
 RAT::DU::LightPathCalculator lp;
 RAT::DU::GroupVelocity gv;
 double vg;
-double error = (1.5*1.5 + 2.0*2.0);
 //Number of times pmt is hit
 double * numHits;
 //Average hit time for each PMT 
 double * hitTimes;
 //Errors on each hit hime
 double * hitErrors;
+TH1D ** hitHistos;
 //Number of pmts
 int numPMTS;
 //fibreNumbers being fired from
@@ -85,7 +91,8 @@ int main(int argc, char ** argv){
     gv = RAT::DU::Utility::Get()->GetGroupVelocity();
     lp = RAT::DU::Utility::Get()->GetLightPathCalculator();
     lp.SetELLIEReflect(true);
-    cout << "Obtained PMT positions "<< pmts.x_pos[1000] << endl;
+    cout << "Obtained PMT positions "<< pmts.x_pos[1000]<<" " <<pmts.y_pos[1000]<<" "<<pmts.z_pos[1000]<< endl;
+    cout << "Direction "<<pmts.x_dir[1000]<<" "<<pmts.y_dir[1000]<<"  "<<pmts.z_dir[1000]<<endl;
     //Loading up root file
     string ntuple_filename = argv[1];
     string plot_filename = argv[2];
@@ -135,11 +142,16 @@ int main(int argc, char ** argv){
         numHits = (double *) malloc(sizeof(double)*numPMTS);
         hitTimes = (double *) malloc(sizeof(double)*numPMTS);
         hitErrors = (double *) malloc(sizeof(double)*numPMTS);
+        hitHistos = (TH1D**)malloc(sizeof(TH1D*)*numPMTS);
         for(int i=0; i<numPMTS; i++){
             numHits[i] = 0;
             hitTimes[i] = 0;
             hitErrors[i] = 0;
-
+            //delete hitHistos[i];
+            //hitHistos[i]=0;
+            char name[20];
+            sprintf(name,"pmt%d",i);
+            hitHistos[i] = new TH1D(name,name,51,0,50);
         }
         cout << "Performing Time cuts" << endl;
         timeCuts(fibreNum);
@@ -191,7 +203,6 @@ void timeCuts(int fibreNumber){
     //double lowerTime = 2*(rPSUP-rAV-500)/vg;
     //Have to divide by 2 to get hypotenuse as dist cut double, but also have a factor of 2 for light to av and light reflected off AV factors cancel
     //double upperTime = distCut/(vg*sin(xAngle));
-    double distCut = 2500;
     double lowerTime = 10;
     double upperTime = 30;
     cout << "Distance Cut is :"<< distCut << endl;
@@ -214,13 +225,14 @@ void timeCuts(int fibreNumber){
                     //cout << "Fibre: "<<fibre<<"  Fibre Number:"<<fibreNumber<<"  PMT LCN: "<<lcn<<"  Distance Cuts:  "<<dis<<endl;
                     //cout << "Got past cuts LCN: "<<lcn<<endl;
                     numHits[lcn]++;
-                    hitTimes[lcn]+=time;
+                    //hitTimes[lcn]+=time;
+                    hitHistos[lcn]->Fill(time);
                 }
             }
         }
     }
     //Iterating over the hitTimes array and dividing by numhits to get average
-    for(int i=0; i<numPMTS; i++){
+   /* for(int i=0; i<numPMTS; i++){
         hitTimes[i]/=numHits[i];
         //If less than 30 hits cant really do statistics
         if(numHits[i]<=30){
@@ -265,6 +277,18 @@ void timeCuts(int fibreNumber){
             numHits[i] = 0;
         }
     };
+    */
+    for(int i=0; i<numPMTS; i++){
+        if(numHits[i]<=30){
+            numHits[i]=0;
+        }
+        else{
+            hitHistos[i]->Fit("gaus");
+            TF1 * f = hitHistos[i]->GetFunction("gaus");
+            hitTimes[i]=f->GetParameter(1);
+            hitErrors[i]=f->GetParError(1);
+        }
+    }
 
 };
 
@@ -280,13 +304,19 @@ double trialFunction(int fibreNumber, int LCN,double AVOffset ){
     calcTime = calcTime/vg;
     */
     lp.SetAVOffset(AVOffset);
-    double energy = 0.00000243658;
-    double localityVal = 20;
+    double localityVal = 10;
+    double energy = lp.WavelengthToEnergy(506.787e-6);
+    //double energy = 0.00000243658;
     lp.CalcByPosition(led.position, PMTPos, energy, localityVal);
     double distInWater = lp.GetDistInWater();
-    double distInScint = lp.GetDistInScint();
+    double distInScint = lp.GetDistInInnerAV();
     double distInAV = lp.GetDistInAV();
     double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
+    //Adding time spent in pmt
+    TVector3 pmtDir(0,0,-1.0);
+    TVector3 entryDir = lp.GetIncidentVecOnPMT();
+    double angleOfEntry = entryDir.Angle(pmtDir)*TMath::RadToDeg();
+    timeOfFlight += gv.PMTBucketTime(angleOfEntry);
     //cout << "calcTime: "<<calcTime<< " Fibre number: "<<fibreNumber<<" PMT LCN: "<<LCN<<endl;
     return timeOfFlight;
 };

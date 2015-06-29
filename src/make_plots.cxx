@@ -29,8 +29,9 @@ int main(int argc,char **argv)
   double distance;
   int fibre_nr;
   int sub_nr;
-  if ( argc != 6 ) {
-    cerr << "Usage: " << argv[0] << " <ntuple filename> <output filename for plots> <distance cut (mm)> <fibre nr> <sub_nr>" << endl;
+  double AVOffset;
+  if ( argc != 7 ) {
+    cerr << "Usage: " << argv[0] << " <ntuple filename> <output filename for plots> <distance cut (mm)> <fibre nr> <sub_nr> <AVOffset (mm)>" << endl;
     return 1;
   }
   else {
@@ -39,6 +40,7 @@ int main(int argc,char **argv)
     distance        = atof(argv[3]);
     fibre_nr        = atoi(argv[4]);
     sub_nr          = atoi(argv[5]);
+    AVOffset        = atof(argv[6]);
   }
   LoadDataBase("make_plots.log");
   char* ratroot = getenv("RATROOT");
@@ -83,7 +85,7 @@ int main(int argc,char **argv)
   }
   TH2D * hflatmap = flatmap_ntuple(ntuple,distance,fibre_nr,sub_nr,0.,500.,1);
   //time_histograms(ntuple,distance,fibre_nr,sub_nr);
-  plot_offset(ntuple,distance,fibre_nr,sub_nr);
+  plot_offset(ntuple,distance,fibre_nr,sub_nr, AVOffset);
   //plotAVFlightDifference(ntuple, ntupleOffset ,distance, fibre_nr, sub_nr);
  // plotAverageHitOffset(ntuple,distance);
   cout << "Made Histograms"<<endl;

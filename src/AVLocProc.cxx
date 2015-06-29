@@ -83,6 +83,7 @@ bool ProcessEventNtupleMC(RAT::DS::Entry * rDS, TNtuple * ntuple,
       double gtTime = mcEV.GetGTTime();
       //printf("Trigger Delay %f\n",GTTriggerDelay);
       double EVoffset = 500 - GTTriggerDelay - gtTime; 
+      cout << "EVoffset: "<<EVoffset<<endl;
       //printf("Universal time %f Universal Time Days %u Universal Time Seconds %u  Clock Ticks:%llu EVOffset %f\n",rEV.GetUniversalTime().GetNanoSeconds(),rEV.GetUniversalTime().GetDays(),rEV.GetUniversalTime().GetSeconds(),rEV.GetClockCount50(),EVoffset);
       Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime()-EVoffset;
       RAT::DS::MCPMT mcPMT = GetMCPMT(PMTID,mc);
