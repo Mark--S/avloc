@@ -370,8 +370,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
                 //distInWater = 2.0;
                 double timeOfFlight = gv.CalcByDistance(distInInnerAV,distInAV,distInWater,energy);
                 //Getting PMT Bucket time
-                TVector3 PMTDir (0,0,-1.0);
-                double angleOfEntry = lp.GetIncidentVecOnPMT().Angle(PMTDir)*TMath::RadToDeg();
+                double angleOfEntry = lp.GetIncidentVecOnPMT().Angle(PMT_dir)*TMath::RadToDeg();
                 timeOfFlight += gv.PMTBucketTime(angleOfEntry);
                 histo_mapPE[lcn]->Fill(time-peTime);
                 histo_map[lcn]->Fill(time-timeOfFlight);
@@ -503,9 +502,8 @@ void plotAverageHitOffset(TNtuple * ntuple, double distance){
             //cout << "Getting fibbre information" <<endl;
             LEDInfo   led    = GetLEDInfoFromFibreNr(fibre, sub);
             //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
-            double lambda = 508e-6;
             double localityVal = 10.0;
-            double energy = lp.WavelengthToEnergy(lambda);
+            double energy = lp.WavelengthToEnergy(506.787e-6);
             //cout << "Calculating by distance"<<endl;
             lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
             double distInWater = lp.GetDistInWater();
@@ -569,9 +567,6 @@ void plotAVFlightDifference(TNtuple * ntuple1, TNtuple * ntuple2 ,double distanc
     PMTInfo pmt_info = GetPMTpositions();
     // effective refractive index:
     // need to get this from the database but is in data now ... hardcoded, i.e. improve!!
-    PhysicsNr n_h2o; 
-    n_h2o.value = 1.3637; 
-    n_h2o.error = 0.0021;
     // Loop over ntuple
     //Stores Difference of Ntuples
     TH1I * histo_map[10000];

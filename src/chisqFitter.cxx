@@ -295,7 +295,7 @@ void timeCuts(int fibreNumber){
 double trialFunction(int fibreNumber, int LCN,double AVOffset ){
     led = GetLEDInfoFromFibreNr(fibreNumber,0);
     PMTPos =  TVector3(pmts.x_pos[LCN],pmts.y_pos[LCN],pmts.z_pos[LCN]);
-    
+    TVector3 PMT_dir(pmts.x_dir[LCN],pmts.y_dir[LCN],pmts.z_dir[LCN]);
     /*TVector3 norm = (PMTPos+LEDPos);
     norm.SetMag(1.0);
     double calcTime = ((RAV*norm)-LEDPos).Mag()+(PMTPos-(RAV*norm)).Mag();
@@ -313,9 +313,8 @@ double trialFunction(int fibreNumber, int LCN,double AVOffset ){
     double distInAV = lp.GetDistInAV();
     double timeOfFlight = gv.CalcByDistance(distInScint,distInAV,distInWater,energy);
     //Adding time spent in pmt
-    TVector3 pmtDir(0,0,-1.0);
     TVector3 entryDir = lp.GetIncidentVecOnPMT();
-    double angleOfEntry = entryDir.Angle(pmtDir)*TMath::RadToDeg();
+    double angleOfEntry = entryDir.Angle(PMT_dir)*TMath::RadToDeg();
     timeOfFlight += gv.PMTBucketTime(angleOfEntry);
     //cout << "calcTime: "<<calcTime<< " Fibre number: "<<fibreNumber<<" PMT LCN: "<<LCN<<endl;
     return timeOfFlight;
