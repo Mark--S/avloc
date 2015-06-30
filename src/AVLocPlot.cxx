@@ -292,13 +292,15 @@ void time_histograms(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr
 
 double bestHitTime(double hitTime, TVector3 fibrePos,TVector3 PMTPos, TVector3 PMTDir,RAT::DU::GroupVelocity gv, RAT::DU::LightPathCalculator lp){
     TVector3 orthPMTDir = PMTDir.Orthogonal();
+    orthPMTDir.SetMag(1.0);
     double bestResidual = 1000;
     double output = -19999999;
     double localityVal = 10.0;
     double energy = lp.WavelengthToEnergy(500e-6);
     for(double rotationAngle =0; rotationAngle<360; rotationAngle++){
-        for(double radius = 5; radius<134.5;radius+=10){ TVector3 testPos = PMTPos+orthPMTDir*cos(rotationAngle);
-            lp.CalcByPosition(fibrePos, PMTPos, energy, localityVal);
+        for(double radius = 5; radius<134.5;radius+=10){ 
+            TVector3 testPos = PMTPos+(radius*orthPMTDir*cos(rotationAngle*TMath::DegToRad()));
+            lp.CalcByPosition(fibrePos, testPos, energy, localityVal);
             double distInWater = lp.GetDistInWater();
             double distInInnerAV = lp.GetDistInInnerAV();
             double distInAV = lp.GetDistInAV();

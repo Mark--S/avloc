@@ -89,7 +89,7 @@ bool ProcessEventNtupleMC(RAT::DS::Entry * rDS, TNtuple * ntuple,
       RAT::DS::MCPMT mcPMT = GetMCPMT(PMTID,mc);
       int numPE = mcPMT.GetMCPECount();
       if(numPE>1) continue;
-      ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag(),mcPMT.GetMCPE(0).GetCreationTime());
+      ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag(),mcPMT.GetMCPE(0).GetCreationTime(),mcPMT.GetMCPhoton(0).GetInTime());
     }
   }
   return true;
