@@ -333,8 +333,9 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
     n_h2o.value = 1.3637; 
     n_h2o.error = 0.0021;
     // Loop over ntuple
-    TH1I * histo_map[10000];
-    TH1I * histo_mapPE[10000];
+    TH1D * histo_map[10000];
+    TH1D * histo_mapPE[10000];
+    TH1D * pmtBucketResiduals[10000];
     TH1I * histo_mapNotOffset[10000];
     TH1D * distanceInAV[10000];
     TH1D * distanceInWater[10000];
@@ -355,6 +356,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
             double time   = (double)ntuple->GetArgs()[3]; 
             int    fibre  = (int)ntuple->GetArgs()[0];
             double peTime = (double)ntuple->GetArgs()[5];
+            double photonTime = (double)ntuple->GetArgs()[6];
             //cout << "Got Args"<<endl;
             if ( histo_map[lcn] == NULL ){
                 char name[128];
@@ -363,20 +365,24 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
                 char nameAV[128];
                 char nameWater[128];
                 char nameScint[128];
+                char nameBucketTime[128];
                 sprintf(name,"pmt%i",lcn);
                 sprintf(nameNotOffset,"pmt no offset%i",lcn);
                 sprintf(namePE,"pmtPE%i",lcn);
                 sprintf(nameAV,"dist in AV %i",lcn);
                 sprintf(nameWater,"dist in Water %i",lcn);
                 sprintf(nameScint,"dist in Scint  %i",lcn);
-                histo_map[lcn] = new TH1I(name,name,51,-25.5,25.5);
-                histo_mapPE[lcn] = new TH1I(namePE,namePE,51,-25.5,25.5);
+                sprintf(nameBucketTime,"Time in Bucket- calculated %i",lcn);
+                histo_map[lcn] = new TH1D(name,name,51,-25.5,25.5);
+                histo_mapPE[lcn] = new TH1D(namePE,namePE,51,-25.5,25.5);
+                pmtBucketResiduals[lcn] = new TH1D(nameBucketTime,nameBucketTime,51,-10.5,10.5);
                 histo_mapNotOffset[lcn] = new TH1I(nameNotOffset,nameNotOffset,51,0,50);
                 distanceInAV[lcn] = new TH1D(nameAV,nameAV,50,-20,200);
                 distanceInWater[lcn] = new TH1D(nameWater,nameWater,500,20,8000);
                 distanceInScint[lcn] = new TH1D(nameScint,nameScint,50,-20,200);
                 histo_map[lcn]->SetXTitle("time (ns)");
                 histo_mapPE[lcn]->SetXTitle("time (ns)");
+                pmtBucketResiduals[lcn]->SetXTitle("time (ns)");
                 histo_mapNotOffset[lcn]->SetXTitle("time (ns)");
                 distanceInAV[lcn]->SetXTitle("distance (mm)");
                 distanceInScint[lcn]->SetXTitle("distance (mm)");
@@ -387,7 +393,7 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
                 TVector3 PMT_pos(pmt_info.x_pos[lcn],pmt_info.y_pos[lcn],pmt_info.z_pos[lcn]);
                 TVector3 PMT_dir(pmt_info.x_dir[lcn],pmt_info.y_dir[lcn],pmt_info.z_dir[lcn]);
                 //PhysicsNr tof = TimeOfFlight(led.position, PMT_pos, n_h2o, 1.);
-                /*double localityVal = 10.0;
+                double localityVal = 10.0;
                 double energy = lp.WavelengthToEnergy(506.787e-6);
                 lp.CalcByPosition(led.position, PMT_pos, energy, localityVal);
                 double distInWater = lp.GetDistInWater();
@@ -398,10 +404,10 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
                 double timeOfFlight = gv.CalcByDistance(distInInnerAV,distInAV,distInWater,energy);
                 //Getting PMT Bucket time
                 double angleOfEntry = lp.GetIncidentVecOnPMT().Angle(PMT_dir)*TMath::RadToDeg();
-                timeOfFlight += gv.PMTBucketTime(angleOfEntry);*/
-                double timeOfFlight = bestHitTime(time,led.position,PMT_pos,PMT_dir,gv,lp);
+                //double timeOfFlight = bestHitTime(time,led.position,PMT_pos,PMT_dir,gv,lp);
                 histo_mapPE[lcn]->Fill(time-peTime);
-                histo_map[lcn]->Fill(time-timeOfFlight);
+                histo_map[lcn]->Fill(photonTime-timeOfFlight);
+                pmtBucketResiduals[lcn]->Fill(peTime-photonTime-gv.PMTBucketTime(angleOfEntry));
                 //cout << time << endl;
                 histo_mapNotOffset[lcn]->Fill(time);
                 /*distanceInAV[lcn]->Fill(distInAV);
@@ -423,7 +429,9 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
     sprintf(title,"time distribution for reflections, fibre %i-%i",fibre_nr,sub_nr);
     TH1D * time_histo = new TH1D("time_histo",title, nBins+1,-10.05,10.05);
     TH1D * time_histo_PE = new TH1D("time_histo_PE",title, nBins+1,-10.05,10.05);
+    TH1D * bucketResidSummary = new TH1D("Bucket time residuals","Bucket Time Residuals",nBins+1,-10.5,10.5);
     time_summary->SetXTitle("LCN");
+    bucketResidSummary->SetXTitle("difference between actual bucket time and calculation (ns)");
     time_summary->SetYTitle("hit_time (ns)");
     time_summary_offset->SetXTitle("Distance (mm)");
     time_summary_offset->SetYTitle("Residuals (ns)");
