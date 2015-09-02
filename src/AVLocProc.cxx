@@ -39,20 +39,23 @@ bool ProcessEventNtuple(RAT::DS::Entry * rDS, TNtuple * ntuple,
   for( int iEV = 0; iEV < rDS->GetEVCount(); ++iEV) {
     RAT::DS::EV& rEV = rDS->GetEV(iEV);
     RAT::DS::CalPMTs& pmtList  = rEV.GetCalPMTs();
-    for( int ipmt = 0; ipmt < pmtList.GetCount(); ++ipmt) {
+    for( int ipmt = 0; ipmt < pmtList.GetCount(); ipmt++) {
       int PMTID = pmtList.GetPMT(ipmt).GetID();
       TVector3 dist(pmt_info.x_pos[PMTID],pmt_info.y_pos[PMTID],pmt_info.z_pos[PMTID]);
       //printf("pmt position %f %f %f\n",dist.X(),dist.Y(),dist.Z());
       //printf("led X:%f ledy:%f ledz:%f\n",led_info.position.X(),led_info.position.Y(),led_info.position.Z());
       dist -= led_info.position;
       //printf("difference %f %f %f\n",dist.X(),dist.Y(),dist.Z());
-      RAT::DS::MCEV  mc = rDS->GetMCEV(iEV);
-      double gtTime = mc.GetGTTime();
       //printf("Trigger Delay %f\n",GTTriggerDelay);
-      double EVoffset = 500 - GTTriggerDelay - gtTime; 
+      double EVoffset = 500 - GTTriggerDelay- 100; 
+      EVoffset = 0;
+      //cout << "HIT TAC: "<<pmtList.GetPMT(ipmt).GetTime()<<endl;
       //printf("Universal time %f Universal Time Days %u Universal Time Seconds %u  Clock Ticks:%llu EVOffset %f\n",rEV.GetUniversalTime().GetNanoSeconds(),rEV.GetUniversalTime().GetDays(),rEV.GetUniversalTime().GetSeconds(),rEV.GetClockCount50(),EVoffset);
       Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime()-EVoffset;
-      ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag());
+      //cout << "PMT TIME: "<<PMTTime<<endl;
+      if(PMTTime>-400){
+          ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag());
+      }
     }
   }
   return true;
@@ -83,13 +86,13 @@ bool ProcessEventNtupleMC(RAT::DS::Entry * rDS, TNtuple * ntuple,
       double gtTime = mcEV.GetGTTime();
       //printf("Trigger Delay %f\n",GTTriggerDelay);
       double EVoffset = 500 - GTTriggerDelay - gtTime; 
-      cout << "EVoffset: "<<EVoffset<<endl;
+      //cout << "EVoffset: "<<EVoffset<<endl;
       //printf("Universal time %f Universal Time Days %u Universal Time Seconds %u  Clock Ticks:%llu EVOffset %f\n",rEV.GetUniversalTime().GetNanoSeconds(),rEV.GetUniversalTime().GetDays(),rEV.GetUniversalTime().GetSeconds(),rEV.GetClockCount50(),EVoffset);
       Double_t PMTTime = pmtList.GetPMT(ipmt).GetTime()-EVoffset;
-      RAT::DS::MCPMT mcPMT = GetMCPMT(PMTID,mc);
-      int numPE = mcPMT.GetMCPECount();
-      if(numPE>1) continue;
-      ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag(),mcPMT.GetMCPE(0).GetCreationTime(),mcPMT.GetMCPhoton(0).GetInTime());
+      //RAT::DS::MCPMT mcPMT = GetMCPMT(PMTID,mc);
+      //int numPE = mcPMT.GetMCPECount();
+      //if(numPE>1) continue;
+      ntuple->Fill(led_info.nr,led_info.sub,PMTID,PMTTime,dist.Mag());
     }
   }
   return true;

@@ -355,8 +355,10 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
             int    lcn    = (int)ntuple->GetArgs()[2];
             double time   = (double)ntuple->GetArgs()[3]; 
             int    fibre  = (int)ntuple->GetArgs()[0];
-            double peTime = (double)ntuple->GetArgs()[5];
-            double photonTime = (double)ntuple->GetArgs()[6];
+            //double peTime = (double)ntuple->GetArgs()[5];
+            //double photonTime = (double)ntuple->GetArgs()[6];
+            double peTime =0;
+            double photonTime=0;
             //cout << "Got Args"<<endl;
             if ( histo_map[lcn] == NULL ){
                 char name[128];
@@ -405,8 +407,9 @@ void plot_offset(TNtuple * ntuple, double distance, int fibre_nr, int sub_nr, do
                 //Getting PMT Bucket time
                 double angleOfEntry = lp.GetIncidentVecOnPMT().Angle(PMT_dir)*TMath::RadToDeg();
                 //double timeOfFlight = bestHitTime(time,led.position,PMT_pos,PMT_dir,gv,lp);
+                timeOfFlight += gv.PMTBucketTime(angleOfEntry);
                 histo_mapPE[lcn]->Fill(time-peTime);
-                histo_map[lcn]->Fill(photonTime-timeOfFlight);
+                histo_map[lcn]->Fill(time-timeOfFlight);
                 pmtBucketResiduals[lcn]->Fill(peTime-photonTime-gv.PMTBucketTime(angleOfEntry));
                 //cout << time << endl;
                 histo_mapNotOffset[lcn]->Fill(time);

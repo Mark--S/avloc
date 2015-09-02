@@ -133,6 +133,9 @@ LEDInfo GetLEDInfoFromFibreName(string fibre_name)
   led_info.position.SetX(led_db->GetD("x"));
   led_info.position.SetY(led_db->GetD("y"));
   led_info.position.SetZ(led_db->GetD("z"));
+  led_info.direction.SetX(led_db->GetD("u"));
+  led_info.direction.SetY(led_db->GetD("v"));
+  led_info.direction.SetZ(led_db->GetD("w"));
 
   // get wavelength spectrum
   vector<Float_t> amp = db->GetLink("ELLIEWAVE","TELLIE503")->GetFArrayFromD("dist_wl_intensity");
@@ -192,7 +195,7 @@ TNtuple * GetNtuple(TFile ** fpointer,TString outputFile)
       cout << "Filename is: "<<filename<<endl;
     cout << "CREATING NEW FILE " << filename << endl;
     (*fpointer) = new TFile(filename,"NEW");
-    ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist:PECreationTime:PhotonEntryTime");
+    ntuple = new TNtuple("avloctuple","avloctuple","fibre_nr:fibre_sub:lcn:time:dist");
   }
   else {
     cout << "REUSING OLD FILE " << filename << endl;
